@@ -1,0 +1,1 @@
+function aW1(n,e){return zQ2(n,t=>{switch(t.kind){case qn.Unary:return m11(e,n,t);case qn.ServerStreaming:return n21(e,n,t);case qn.ClientStreaming:return p31(e,n,t);case qn.BiDiStreaming:return q41(e,n,t);default:return null}})}function bW2(n,e){return aW1(n,e)}function JNk(){}

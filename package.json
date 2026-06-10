@@ -1,0 +1,127 @@
+{
+  "publisher": "starduster",
+  "name": "cursor-byok",
+  "displayName": "Cursor BYOK",
+  "version": "1.0.0",
+  "description": "Readable BYOK adapter for Cursor.",
+  "icon": "resources/icon.png",
+  "main": "./src/extension.js",
+  "extensionKind": [
+    "ui"
+  ],
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "cursorByok.toggleMode",
+        "title": "Cursor BYOK: Toggle Mode"
+      },
+      {
+        "command": "cursorByok.startServer",
+        "title": "Cursor BYOK: Start Server"
+      },
+      {
+        "command": "cursorByok.stopServer",
+        "title": "Cursor BYOK: Stop Server"
+      },
+      {
+        "command": "cursorByok.installWorkbenchHook",
+        "title": "Cursor BYOK: Install Workbench Hook"
+      },
+      {
+        "command": "cursorByok.restoreWorkbenchHook",
+        "title": "Cursor BYOK: Restore Workbench Hook"
+      },
+      {
+        "command": "cursorByok.openProviders",
+        "title": "Cursor BYOK: Open Providers Config"
+      },
+      {
+        "command": "cursorByok.openRoutes",
+        "title": "Cursor BYOK: Open Routes Config"
+      },
+      {
+        "command": "cursorByok.openLog",
+        "title": "Cursor BYOK: Open Log"
+      },
+      {
+        "command": "cursorByok.openSettings",
+        "title": "Cursor BYOK: Open Settings"
+      },
+      {
+        "command": "cursorByok.toggleFileLog",
+        "title": "Cursor BYOK: Toggle File Logging"
+      },
+      {
+        "command": "cursorByok.openPanel",
+        "title": "Cursor BYOK: Open Control Panel"
+      }
+    ],
+    "configuration": {
+      "title": "Cursor BYOK",
+      "properties": {
+        "cursorByok.server.host": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "BYOK server listen host."
+        },
+        "cursorByok.server.port": {
+          "type": "number",
+          "default": 9960,
+          "description": "BYOK server listen port."
+        },
+        "cursorByok.server.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the BYOK server when the extension activates."
+        },
+        "cursorByok.log.file": {
+          "type": "boolean",
+          "default": true,
+          "description": "Write BYOK diagnostic logs to the BYOK config directory."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cursor-byok",
+          "title": "Cursor BYOK",
+          "icon": "resources/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "cursor-byok": [
+        {
+          "type": "webview",
+          "id": "cursorByok.panel",
+          "name": "Control Panel"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "lint": "eslint .",
+    "check": "node scripts/check-syntax.js && eslint . && node --test",
+    "install:cursor": "node scripts/install-cursor.js",
+    "preflight:cursor": "node scripts/install-workbench-hook.js --dry-run",
+    "restore:cursor": "node scripts/install-workbench-hook.js --restore",
+    "debug:cursor-cdp": "node scripts/cdp-inspect-cursor.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
+    "@vakra-dev/supermarkdown": "^0.0.6",
+    "acorn": "^8.16.0",
+    "openai": "^6.34.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.4"
+  }
+}

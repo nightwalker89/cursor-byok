@@ -1,0 +1,1 @@
+function gO_(n,e){return rc1(n,t=>{switch(t.kind){case rn.Unary:return lc1(e,n,t);case rn.ServerStreaming:return cc1(e,n,t);case rn.ClientStreaming:return uc1(e,n,t);case rn.BiDiStreaming:return dc1(e,n,t);default:return null}})}function vO_(n,e){return gO_(n,e)}function IMk(){}

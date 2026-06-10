@@ -1,0 +1,2094 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 4px;
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background);
+  margin: 0;
+  padding: 12px;
+  box-sizing: border-box;
+  font-size: 11px;
+  user-select: none;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.08));
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.header h2 {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground, #858585);
+}
+
+/* Core Controls */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.status-card {
+  background: var(--vscode-editor-background, rgba(0, 0, 0, 0.12));
+  border: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-lg);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.status-card.clickable {
+  cursor: pointer;
+}
+
+.status-card.clickable:hover {
+  border-color: var(--vscode-focusBorder, rgba(0, 122, 204, 0.5));
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-card.clickable:active {
+  transform: translateY(0);
+}
+
+.status-card-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.status-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--vscode-descriptionForeground, #858585);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground, #858585);
+}
+
+.status-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  min-height: 18px;
+}
+
+.server-status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge.active {
+  background: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.badge.inactive {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pulse-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--vscode-testing-iconPassed, #2ea44f);
+  display: inline-block;
+  box-shadow: 0 0 0 0 rgba(46, 164, 79, 0.6);
+  animation: pulse 2s infinite;
+}
+
+.pulse-indicator.stopped {
+  background-color: var(--vscode-testing-iconFailed, #cf222e);
+  animation: none;
+  box-shadow: none;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 164, 79, 0.6); }
+  70% { transform: scale(1); box-shadow: 0 0 0 4px rgba(46, 164, 79, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 164, 79, 0); }
+}
+
+.section-title {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground, #858585);
+  margin-bottom: 6px;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  cursor: pointer;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+button:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+button.secondary {
+  background: var(--vscode-button-secondaryBackground, rgba(255, 255, 255, 0.05));
+  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+  border: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.08));
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground, rgba(255, 255, 255, 0.1));
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+/* Switch Styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 24px;
+  height: 14px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255, 255, 255, 0.08);
+  transition: .15s;
+  border-radius: 14px;
+  border: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.1));
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 8px; width: 8px;
+  left: 2px; bottom: 2px;
+  background-color: var(--vscode-foreground, #ccc);
+  transition: .15s;
+  border-radius: 50%;
+}
+
+input:checked + .slider { background-color: var(--vscode-button-background, #007acc); }
+input:checked + .slider:before { transform: translateX(10px); background-color: var(--vscode-button-foreground, #ffffff); }
+
+/* Providers Manager */
+.providers-section,
+.web-tools-section {
+  border-top: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.08));
+  padding-top: 12px;
+}
+
+.web-tools-card {
+  border: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.01);
+  overflow: hidden;
+}
+
+.web-tools-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.06));
+}
+
+.web-tools-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 7px 8px;
+  opacity: 0.7;
+}
+
+.web-tools-tab.active {
+  opacity: 1;
+  border-bottom-color: var(--vscode-button-background, #007acc);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.web-tools-panel {
+  display: none;
+  padding: 8px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.web-tools-panel.active {
+  display: flex;
+}
+
+.web-provider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.web-provider-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.web-provider-option.selected {
+  border-color: var(--vscode-focusBorder, rgba(0, 122, 204, 0.5));
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.web-provider-option input[type="radio"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.web-provider-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.web-provider-name {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.web-provider-hint {
+  font-size: 9px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.35;
+}
+
+.web-tools-env-hint {
+  font-size: 9px;
+  color: var(--vscode-testing-iconPassed, #2ea44f);
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+.web-tools-hint {
+  font-size: 9px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+}
+
+.preset-bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.preset-bar select { flex: 1; }
+
+.accordion-item {
+  border: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.01);
+  overflow: hidden;
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.accordion-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accordion-arrow { transition: transform var(--transition-fast); }
+.accordion-item.open .accordion-arrow { transform: rotate(90deg); }
+
+.accordion-content {
+  display: none;
+  padding: 8px;
+  border-top: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.04));
+  flex-direction: column;
+  gap: 8px;
+}
+.accordion-item.open .accordion-content { display: flex; }
+
+.form-group { display: flex; flex-direction: column; gap: 3px; }
+
+.form-group label {
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground, #858585);
+  font-weight: 600;
+}
+
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+input[type="text"], input[type="password"], input[type="number"], select, textarea {
+  background: var(--vscode-input-background, rgba(0, 0, 0, 0.2));
+  color: var(--vscode-input-foreground, var(--vscode-foreground));
+  border: 1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 10px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, select:focus, textarea:focus { border-color: var(--vscode-focusBorder, #007acc); }
+
+.password-wrapper { position: relative; display: flex; align-items: center; }
+.password-wrapper input { padding-right: 22px; }
+
+.eye-btn {
+  position: absolute;
+  right: 4px;
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.eye-btn:hover { color: var(--vscode-foreground); background: none; box-shadow: none; transform: none; }
+
+.reveal-btn {
+  position: absolute;
+  right: 4px;
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 11px;
+  line-height: 1;
+}
+.reveal-btn:hover { color: var(--vscode-foreground); background: none; box-shadow: none; transform: none; }
+
+.models-list-section {
+  border-top: 1px dotted rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.model-item {
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.01);
+  overflow: hidden;
+}
+
+.model-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+}
+
+.model-content {
+  display: none;
+  padding: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  flex-direction: column;
+  gap: 6px;
+}
+.model-item.open .model-content { display: flex; }
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+}
+.checkbox-label input { width: auto; margin: 0; }
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.icon-btn:hover { color: var(--vscode-testing-iconFailed, #cf222e); background: rgba(255, 255, 255, 0.05); }
+
+.btn-mini { padding: 3px 6px; font-size: 9px; align-self: flex-start; }
+
+.empty-state { text-align: center; padding: 16px; color: var(--vscode-descriptionForeground); font-style: italic; }
+
+.advanced-section { margin-top: 8px; }
+
+.badge-mini-count {
+  font-size: 8px;
+  color: var(--vscode-descriptionForeground);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.remote-models-section {
+  background: rgba(0, 122, 204, 0.04);
+  border: 1px solid rgba(0, 122, 204, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.remote-model-list {
+  max-height: 80px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.remote-model-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 5px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+}
+.remote-model-item:hover {
+  background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.08));
+}
+
+.toast {
+  background: var(--vscode-notifications-background, #252526);
+  color: var(--vscode-notifications-foreground, #cccccc);
+  border: 1px solid var(--vscode-notifications-border, rgba(255, 255, 255, 0.1));
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  pointer-events: auto;
+}
+.toast.error {
+  border-left: 3px solid var(--vscode-testing-iconFailed, #cf222e);
+}
+.toast.info {
+  border-left: 3px solid var(--vscode-focusBorder, #007acc);
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: absolute;
+  z-index: 10000;
+  max-width: 280px;
+  background: var(--vscode-notifications-background, #252526);
+  color: var(--vscode-notifications-foreground, #cccccc);
+  border: 1px solid var(--vscode-notifications-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.12s;
+  backdrop-filter: blur(8px);
+}
+.tooltip.visible {
+  opacity: 1;
+  visibility: visible;
+}
+.tooltip h4 {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vscode-focusBorder, #007acc);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tooltip ul {
+  margin: 6px 0;
+  padding-left: 14px;
+}
+.tooltip li {
+  margin-bottom: 4px;
+}
+.tooltip li:last-child {
+  margin-bottom: 0;
+}
+.tooltip code {
+  font-family: var(--vscode-editor-font-family, monospace);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-size: 9.5px;
+}
+.tooltip-sub {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground, #858585);
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--vscode-focusBorder)"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <h2>Control Panel</h2>
+  </div>
+
+  <div class="status-grid">
+    <div class="status-card clickable" id="byokModeSwitchCard" data-tooltip-key="byokAvailability">
+      <div class="status-card-header">
+        <div class="status-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+        </div>
+        <div class="status-label">BYOK</div>
+      </div>
+      <div class="status-value-row">
+        <span id="mode" class="badge inactive">OFF</span>
+        <label class="switch" onclick="event.stopPropagation();">
+          <input type="checkbox" id="byokModeInput">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="status-card" id="serverStatusCard" data-tooltip-key="byokServer">
+      <div class="status-card-header">
+        <div class="status-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+        </div>
+        <div class="status-label">BYOK Server</div>
+      </div>
+      <div class="status-value-row">
+        <span class="server-status-wrap">
+          <span id="serverIndicator" class="pulse-indicator stopped"></span>
+          <span id="server" style="font-weight:600; color:var(--vscode-descriptionForeground);">-</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Providers & Models 主配置区 -->
+  <div class="providers-section">
+    <div class="section-title">Providers & Models</div>
+
+    <div id="providersContainer"></div>
+
+    <!-- 重新设计的 Quick Add 区域 -->
+    <div class="add-provider-zone" style="margin-top: 10px; border-top: 1px dotted rgba(255, 255, 255, 0.08); padding-top: 10px;">
+      <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--vscode-descriptionForeground); margin-bottom: 6px;">Add Provider</div>
+      <div class="btn-grid" style="grid-template-columns: repeat(2, 1fr); gap: 6px;">
+        <button class="secondary btn-mini" onclick="applyPreset('deepseek')" style="justify-content: center;" data-tooltip-key="quickAddDeepseek">DeepSeek</button>
+        <button class="secondary btn-mini" onclick="applyPreset('openai')" style="justify-content: center;" data-tooltip-key="quickAddOpenai">OpenAI</button>
+        <button class="secondary btn-mini" onclick="applyPreset('anthropic')" style="justify-content: center;" data-tooltip-key="quickAddAnthropic">Anthropic</button>
+        <button class="primary btn-mini" onclick="addProvider()" style="justify-content: center; font-weight: 700; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none;" data-tooltip-key="quickAddCustom">+ Custom</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="web-tools-section">
+    <div class="section-title">Web Tools</div>
+    <div class="web-tools-card" id="webToolsCard">
+      <div class="web-tools-tabs">
+        <button type="button" class="web-tools-tab active" id="webToolsTabSearch" data-web-tools-tab="search" data-tooltip-key="webToolsSearchTab">Search</button>
+        <button type="button" class="web-tools-tab" id="webToolsTabFetch" data-web-tools-tab="fetch" data-tooltip-key="webToolsFetchTab">Fetch</button>
+      </div>
+      <div class="web-tools-panel active" id="webToolsPanelSearch">
+        <div class="web-tools-hint" data-tooltip-key="webToolsSearchHint">Server-side WebSearch for BYOK. Exa runs on the BYOK server when configured; otherwise BYOK waits for Cursor client completion.</div>
+        <div class="web-provider-list" id="webSearchProviderList">
+          <label class="web-provider-option" data-search-provider="client">
+            <input type="radio" name="webSearchProvider" value="client" data-web-tools-scope="search" data-web-tools-field="provider">
+            <span class="web-provider-copy">
+              <span class="web-provider-name">Cursor client</span>
+              <span class="web-provider-hint">Always wait for Cursor to complete WebSearch via the client interaction bridge.</span>
+            </span>
+          </label>
+          <label class="web-provider-option selected" data-search-provider="exa">
+            <input type="radio" name="webSearchProvider" value="exa" checked data-web-tools-scope="search" data-web-tools-field="provider">
+            <span class="web-provider-copy">
+              <span class="web-provider-name">Exa</span>
+              <span class="web-provider-hint">Server-side search through Exa API. Requires API key or EXA_API_KEY.</span>
+            </span>
+          </label>
+        </div>
+        <div id="webSearchExaOptionsGroup">
+          <div class="form-group">
+            <label data-tooltip-key="webSearchApiKey">API Key</label>
+            <div class="password-wrapper">
+              <input type="password" id="webSearchApiKeyInput" data-web-tools-scope="search" data-web-tools-field="apiKey" placeholder="Exa API key or EXA_API_KEY env">
+              <button type="button" class="reveal-btn" data-reveal-target="webSearchApiKeyInput" aria-label="Reveal API key">👁</button>
+            </div>
+            <div class="web-tools-env-hint" id="webSearchEnvHint" style="display:none;">Using EXA_API_KEY from the environment.</div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label data-tooltip-key="webSearchType">Search Type</label>
+              <select id="webSearchTypeInput" data-web-tools-scope="search" data-web-tools-field="type">
+                <option value="auto">auto</option>
+                <option value="fast">fast</option>
+                <option value="deep">deep</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label data-tooltip-key="webSearchMaxResults">Max Results</label>
+              <input type="number" id="webSearchMaxResultsInput" data-web-tools-scope="search" data-web-tools-field="numResults" min="1" max="100" placeholder="10">
+            </div>
+          </div>
+          <div class="form-group">
+            <label data-tooltip-key="webSearchBaseUrl">Base URL</label>
+            <input type="text" id="webSearchBaseUrlInput" data-web-tools-scope="search" data-web-tools-field="baseUrl" placeholder="https://api.exa.ai">
+          </div>
+        </div>
+      </div>
+      <div class="web-tools-panel" id="webToolsPanelFetch">
+        <div class="web-tools-hint" data-tooltip-key="webToolsFetchHint">Server-side WebFetch for BYOK. Builtin uses supermarkdown when installed; otherwise BYOK falls back to a lightweight HTML converter.</div>
+        <div class="web-provider-list" id="webFetchProviderList">
+          <label class="web-provider-option selected" data-fetch-provider="builtin">
+            <input type="radio" name="webFetchProvider" value="builtin" checked data-web-tools-scope="fetch" data-web-tools-field="provider">
+            <span class="web-provider-copy">
+              <span class="web-provider-name">Built-in (supermarkdown)</span>
+              <span class="web-provider-hint">Fetch HTML directly and convert to markdown on the BYOK server.</span>
+            </span>
+          </label>
+          <label class="web-provider-option" data-fetch-provider="jina">
+            <input type="radio" name="webFetchProvider" value="jina" data-web-tools-scope="fetch" data-web-tools-field="provider">
+            <span class="web-provider-copy">
+              <span class="web-provider-name">Jina Reader</span>
+              <span class="web-provider-hint">Uses r.jina.ai for JS-rendered pages. Requires API key.</span>
+            </span>
+          </label>
+          <label class="web-provider-option" data-fetch-provider="firecrawl">
+            <input type="radio" name="webFetchProvider" value="firecrawl" data-web-tools-scope="fetch" data-web-tools-field="provider">
+            <span class="web-provider-copy">
+              <span class="web-provider-name">Firecrawl</span>
+              <span class="web-provider-hint">Uses Firecrawl /v1/scrape. Requires API key.</span>
+            </span>
+          </label>
+        </div>
+        <div class="form-group" id="webFetchApiKeyGroup" style="display:none;">
+          <label data-tooltip-key="webFetchApiKey">API Key</label>
+          <div class="password-wrapper">
+            <input type="password" id="webFetchApiKeyInput" data-web-tools-scope="fetch" data-web-tools-field="apiKey" placeholder="Provider API key or env fallback">
+            <button type="button" class="reveal-btn" data-reveal-target="webFetchApiKeyInput" aria-label="Reveal API key">👁</button>
+          </div>
+        </div>
+        <div class="form-group" id="webFetchBaseUrlGroup" style="display:none;">
+          <label data-tooltip-key="webFetchBaseUrl">Base URL</label>
+          <input type="text" id="webFetchBaseUrlInput" data-web-tools-scope="fetch" data-web-tools-field="baseUrl" placeholder="https://api.firecrawl.dev">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 默认折叠的高级与调试工具 -->
+  <div class="advanced-section accordion-item" id="advancedDebugAccordion">
+    <div class="accordion-header" onclick="toggleAdvancedAccordion()">
+      <span class="accordion-title">
+        <svg class="accordion-arrow" id="advancedArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>Advanced & Debug Tools</span>
+      </span>
+      <span id="routesBadgeCount" class="badge-mini-count"><span id="routes">0</span> routes</span>
+    </div>
+
+    <div class="accordion-content" id="advancedContent" style="display: none;">
+      <!-- Service & Integration -->
+      <div class="form-group">
+        <label data-tooltip-key="groupService">Service & Integration</label>
+        <div class="btn-grid">
+          <button data-command="start" class="secondary" data-tooltip-key="btnStart">Start Server</button>
+          <button data-command="stop" class="secondary" data-tooltip-key="btnStop">Stop Server</button>
+          <button data-command="toggle" class="secondary" data-tooltip-key="btnToggle">Toggle Interception</button>
+          <button data-command="installHook" class="secondary" data-tooltip-key="btnInstallHook">Install Hook</button>
+        </div>
+      </div>
+
+      <!-- Diagnostics & Config -->
+      <div class="form-group" style="margin-top: 8px;">
+        <label data-tooltip-key="groupDiagnostics">Diagnostics & Config</label>
+        <div class="btn-grid">
+          <button id="saveProvidersBtn" class="secondary" data-tooltip-key="btnSaveConfig">Save Config</button>
+          <button id="refreshProvidersBtn" class="secondary" data-tooltip-key="btnRefresh">Refresh</button>
+          <button id="editProvidersJsonBtn" data-command="providers" class="secondary" data-tooltip-key="btnOpenProviders">Open Providers</button>
+          <button data-command="routes" class="secondary" data-tooltip-key="btnOpenRoutes">Open Routes</button>
+          <button data-command="log" class="secondary" data-tooltip-key="btnOpenLog">Open Log File</button>
+          <button data-command="settings" class="secondary" data-tooltip-key="btnSettings">Settings</button>
+        </div>
+      </div>
+
+      <div class="switch-container" id="fileLogSwitch" data-tooltip-key="switchFileLog" style="background: none; border: 1px solid rgba(255, 255, 255, 0.04); padding: 5px 8px; margin-top: 8px;">
+        <div class="switch-label-wrap" style="font-size: 10px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span>Write File Log</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="fileLogInput">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toasts" style="position: fixed; bottom: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; z-index: 10000;"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const vscode = acquireVsCodeApi();
+let currentState = {};
+let draftProviders = [];
+let draftWebSearch = { provider: "exa", type: "auto", numResults: 10 };
+let draftWebFetch = { provider: "builtin" };
+let activeWebToolsTab = "search";
+let providerOpen = {};
+let modelOpen = {};
+let remoteModels = {};
+let activeFieldInfo = null;
+let saveTimer = null;
+let toastSeq = 0;
+let isAdvancedOpen = false;
+let lastInteractionTime = 0;
+const KNOWN_PROVIDER_TYPES = ["openai-chat", "openai-responses", "anthropic"];
+function registerInteraction() {
+  lastInteractionTime = Date.now();
+}
+
+function element(id) {
+  return document.getElementById(id);
+}
+
+function escapeHtml(str) {
+  if (typeof str !== "string") return String(str || "");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// escapeAttr
+function escapeAttr(str) {
+  return escapeHtml(str);
+}
+
+function post(command, payload = {}) {
+  vscode.postMessage({ command, ...payload });
+}
+
+function clone(obj) {
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch {
+    return obj;
+  }
+}
+
+// 焦点保存与恢复机制
+function saveActiveElement() {
+  const el = document.activeElement;
+  if (!el || !el.dataset || el.dataset.field === undefined) {
+    activeFieldInfo = null;
+    return;
+  }
+  activeFieldInfo = {
+    scope: el.dataset.scope,
+    providerIndex: el.dataset.providerIndex,
+    modelIndex: el.dataset.modelIndex,
+    field: el.dataset.field,
+    selectionStart: el.selectionStart,
+    selectionEnd: el.selectionEnd,
+  };
+}
+
+function restoreActiveElement() {
+  if (!activeFieldInfo) return;
+  let selector = '';
+  if (activeFieldInfo.scope === 'provider') {
+    selector = `[data-scope="provider"][data-provider-index="${activeFieldInfo.providerIndex}"][data-field="${activeFieldInfo.field}"]`;
+  } else if (activeFieldInfo.scope === 'model') {
+    selector = `[data-scope="model"][data-provider-index="${activeFieldInfo.providerIndex}"][data-model-index="${activeFieldInfo.modelIndex}"][data-field="${activeFieldInfo.field}"]`;
+  }
+  if (selector) {
+    const el = document.querySelector(selector);
+    if (el) {
+      el.focus();
+      if (typeof el.setSelectionRange === 'function' && activeFieldInfo.selectionStart !== undefined) {
+        try {
+          el.setSelectionRange(activeFieldInfo.selectionStart, activeFieldInfo.selectionEnd);
+        } catch(e) {}
+      }
+    }
+  }
+}
+
+// 自动保存防抖
+function debouncedSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveProviders();
+  }, 500);
+}
+
+function saveProviders() {
+  const result = providersForSave();
+  const webTools = webToolsForSave();
+  if (result.errors.length || webTools.errors.length) {
+    showProviderError(result.errors.concat(webTools.errors).join(" "));
+    return;
+  }
+  showProviderError("");
+  const payload = { schemaVersion: 1, providers: result.providers };
+  if (webTools.webSearch) payload.webSearch = webTools.webSearch;
+  if (webTools.webFetch) payload.webFetch = webTools.webFetch;
+  post("saveProviders", { providers: payload });
+}
+
+function webToolsForSave() {
+  const errors = [];
+  const webSearch = normalizeWebSearchForWire(draftWebSearch);
+  const webFetch = normalizeWebFetchForWire(draftWebFetch);
+  if (webFetch.provider === "jina" && !webFetch.apiKey && !currentState.webToolsEnv?.jinaApiKey) {
+    errors.push("Jina API key is required for server-side WebFetch.");
+  }
+  if (webFetch.provider === "firecrawl" && !webFetch.apiKey && !currentState.webToolsEnv?.firecrawlApiKey) {
+    errors.push("Firecrawl API key is required for server-side WebFetch.");
+  }
+  return {
+    webSearch,
+    webFetch,
+    errors,
+  };
+}
+
+function normalizeWebSearchForWire(source) {
+  const copy = clone(source) || {};
+  const provider = String(copy.provider || "exa").trim() || "exa";
+  const out = { provider };
+  const apiKey = String(copy.apiKey || "").trim();
+  const baseUrl = String(copy.baseUrl || "").trim();
+  const type = String(copy.type || "").trim();
+  const numResults = Number.parseInt(copy.numResults, 10);
+  if (apiKey) out.apiKey = apiKey;
+  if (baseUrl) out.baseUrl = baseUrl;
+  if (type) out.type = type;
+  if (Number.isInteger(numResults) && numResults > 0) out.numResults = Math.min(numResults, 100);
+  return out;
+}
+
+function normalizeWebFetchForWire(source) {
+  const copy = clone(source) || {};
+  const provider = String(copy.provider || "builtin").trim() || "builtin";
+  const out = { provider };
+  const apiKey = String(copy.apiKey || "").trim();
+  const baseUrl = String(copy.baseUrl || "").trim();
+  if (apiKey) out.apiKey = apiKey;
+  if (baseUrl) out.baseUrl = baseUrl;
+  return out;
+}
+
+function syncDraftWebToolsFromConfig(config) {
+  const webSearch = config && config.webSearch ? clone(config.webSearch) : null;
+  const webFetch = config && config.webFetch ? clone(config.webFetch) : null;
+  draftWebSearch = {
+    provider: "exa",
+    type: "auto",
+    numResults: 10,
+    ...(webSearch || {}),
+  };
+  draftWebFetch = {
+    provider: "builtin",
+    ...(webFetch || {}),
+  };
+}
+
+function setWebToolsTab(tab) {
+  activeWebToolsTab = tab === "fetch" ? "fetch" : "search";
+  const searchTab = element("webToolsTabSearch");
+  const fetchTab = element("webToolsTabFetch");
+  const searchPanel = element("webToolsPanelSearch");
+  const fetchPanel = element("webToolsPanelFetch");
+  if (searchTab) searchTab.classList.toggle("active", activeWebToolsTab === "search");
+  if (fetchTab) fetchTab.classList.toggle("active", activeWebToolsTab === "fetch");
+  if (searchPanel) searchPanel.classList.toggle("active", activeWebToolsTab === "search");
+  if (fetchPanel) fetchPanel.classList.toggle("active", activeWebToolsTab === "fetch");
+}
+
+function updateWebSearchFieldVisibility() {
+  const provider = String(draftWebSearch.provider || "exa");
+  const exaOptionsGroup = element("webSearchExaOptionsGroup");
+  const envHint = element("webSearchEnvHint");
+  if (exaOptionsGroup) exaOptionsGroup.style.display = provider === "exa" ? "block" : "none";
+  for (const option of document.querySelectorAll("[data-search-provider]")) {
+    option.classList.toggle("selected", option.dataset.searchProvider === provider);
+  }
+  if (envHint) {
+    const env = currentState.webToolsEnv || {};
+    const showEnv = provider === "exa" && !!env.exaApiKey && !String(draftWebSearch.apiKey || "").trim();
+    envHint.style.display = showEnv ? "block" : "none";
+  }
+}
+
+function updateWebFetchFieldVisibility() {
+  const provider = String(draftWebFetch.provider || "builtin");
+  const apiKeyGroup = element("webFetchApiKeyGroup");
+  const baseUrlGroup = element("webFetchBaseUrlGroup");
+  if (apiKeyGroup) apiKeyGroup.style.display = provider === "builtin" ? "none" : "block";
+  if (baseUrlGroup) baseUrlGroup.style.display = provider === "firecrawl" ? "block" : "none";
+  for (const option of document.querySelectorAll("[data-fetch-provider]")) {
+    option.classList.toggle("selected", option.dataset.fetchProvider === provider);
+  }
+}
+
+function renderWebToolsPanel() {
+  const searchProvider = String(draftWebSearch.provider || "exa");
+  for (const input of document.querySelectorAll('input[name="webSearchProvider"]')) {
+    input.checked = input.value === searchProvider;
+  }
+  const searchType = element("webSearchTypeInput");
+  const searchApiKey = element("webSearchApiKeyInput");
+  const searchBaseUrl = element("webSearchBaseUrlInput");
+  const searchMaxResults = element("webSearchMaxResultsInput");
+  if (searchType) searchType.value = draftWebSearch.type || "auto";
+  if (searchApiKey) searchApiKey.value = draftWebSearch.apiKey || "";
+  if (searchBaseUrl) searchBaseUrl.value = draftWebSearch.baseUrl || "";
+  if (searchMaxResults) searchMaxResults.value = draftWebSearch.numResults !== undefined ? String(draftWebSearch.numResults) : "10";
+
+  const fetchProvider = String(draftWebFetch.provider || "builtin");
+  for (const input of document.querySelectorAll('input[name="webFetchProvider"]')) {
+    input.checked = input.value === fetchProvider;
+  }
+  const fetchApiKey = element("webFetchApiKeyInput");
+  const fetchBaseUrl = element("webFetchBaseUrlInput");
+  if (fetchApiKey) fetchApiKey.value = draftWebFetch.apiKey || "";
+  if (fetchBaseUrl) fetchBaseUrl.value = draftWebFetch.baseUrl || "";
+  updateWebSearchFieldVisibility();
+  updateWebFetchFieldVisibility();
+  setWebToolsTab(activeWebToolsTab);
+}
+
+function handleWebToolsFieldEvent(event) {
+  registerInteraction();
+  const target = event.target;
+  if (!target || !target.dataset.webToolsField) return;
+  const scope = target.dataset.webToolsScope;
+  const field = target.dataset.webToolsField;
+  const value = target.type === "radio" ? target.value : target.value;
+  if (scope === "search") {
+    if (field === "numResults") {
+      const parsed = Number.parseInt(value, 10);
+      draftWebSearch.numResults = Number.isInteger(parsed) && parsed > 0 ? parsed : 10;
+    } else {
+      draftWebSearch[field] = value;
+    }
+    if (field === "provider") updateWebSearchFieldVisibility();
+  } else if (scope === "fetch") {
+    draftWebFetch[field] = value;
+    if (field === "provider") updateWebFetchFieldVisibility();
+  }
+  debouncedSave();
+}
+
+function showProviderError(message) {
+  if (message) {
+    showToast(message, "error", 6000);
+  }
+}
+
+function providersForSave() {
+  const errors = [];
+  const ids = new Set();
+  const providers = draftProviders.map(function(provider, index) {
+    const copy = normalizeProviderForWire(provider);
+    if (!copy.id || !String(copy.id).trim()) errors.push("Provider " + (index + 1) + ": id is required.");
+    if (copy.id && ids.has(copy.id)) errors.push("Provider " + copy.id + ": duplicate id.");
+    if (copy.id) ids.add(copy.id);
+    if (typeof provider.headers === "string" && provider.headers.trim()) {
+      try {
+        copy.headers = JSON.parse(provider.headers);
+      } catch {
+        errors.push("Provider " + (copy.id || index + 1) + ": headers must be valid JSON.");
+      }
+    }
+    copy.models = Array.isArray(copy.models) ? copy.models : [];
+    return copy;
+  });
+  return { providers: providers, errors: errors };
+}
+
+function normalizeProviderForWire(provider) {
+  const copy = clone(provider) || {};
+  if (typeof copy.headers === "string") {
+    const text = copy.headers.trim();
+    if (text) {
+      try { copy.headers = JSON.parse(text); } catch { delete copy.headers; }
+    } else {
+      delete copy.headers;
+    }
+  }
+  return copy;
+}
+
+function showToast(text, level, duration) {
+  const container = element("toasts");
+  if (!container) return;
+  const id = ++toastSeq;
+  const toast = document.createElement("div");
+  toast.className = "toast " + (level || "info");
+  toast.dataset.toastId = String(id);
+  toast.textContent = text;
+  container.appendChild(toast);
+  setTimeout(function() {
+    if (toast.parentNode) toast.parentNode.removeChild(toast);
+  }, duration || 4000);
+}
+
+function providerKey(index) {
+  const provider = draftProviders[index];
+  return provider && provider.id ? provider.id : "provider-" + index;
+}
+
+function providerIndexForKey(key) {
+  const text = String(key || "");
+  const byId = draftProviders.findIndex((provider) => provider && provider.id === text);
+  if (byId >= 0) return byId;
+  const match = text.match(/^provider-(\d+)$/);
+  if (!match) return -1;
+  const index = Number.parseInt(match[1], 10);
+  return Number.isInteger(index) && draftProviders[index] ? index : -1;
+}
+
+function modelKey(providerIndex, modelIndex) {
+  const provider = draftProviders[providerIndex];
+  const model = provider && Array.isArray(provider.models) ? provider.models[modelIndex] : null;
+  return providerKey(providerIndex) + ":" + (model && model.id ? model.id : "model-" + modelIndex);
+}
+
+function renderProvidersList() {
+  const container = element("providersContainer");
+  if (!container) return;
+  if (!draftProviders.length) {
+    container.innerHTML = '<div class="empty-state">No providers configured.</div>';
+    return;
+  }
+  container.innerHTML = draftProviders.map((provider, providerIndex) => renderProvider(provider, providerIndex)).join("");
+}
+
+function renderProvider(provider, providerIndex) {
+  const key = providerKey(providerIndex);
+  const isOpen = providerOpen[key] !== false;
+  const auth = provider.auth || {};
+  const title = provider.name || provider.id || "Unnamed Provider";
+  const type = provider.type || "openai-chat";
+  const models = Array.isArray(provider.models) ? provider.models : [];
+
+  const types = KNOWN_PROVIDER_TYPES.includes(type) ? KNOWN_PROVIDER_TYPES : [type].concat(KNOWN_PROVIDER_TYPES);
+  const typeOptions = types.map(t => `<option value="${escapeAttr(t)}"${t === type ? " selected" : ""}>${escapeHtml(t)}</option>`).join("");
+  const authKinds = ["bearer", "api-key"];
+  const authKindOptions = authKinds.map(k => `<option value="${k}"${k === (auth.kind || "bearer") ? " selected" : ""}>${k}</option>`).join("");
+
+  const headersStr = typeof provider.headers === "string"
+    ? provider.headers
+    : (provider.headers && typeof provider.headers === "object" ? JSON.stringify(provider.headers, null, 2) : "");
+
+  return `
+    <div class="accordion-item${isOpen ? " open" : ""}" data-provider-index="${providerIndex}">
+      <div class="accordion-header" onclick="toggleProvider(${providerIndex})">
+        <span class="accordion-title">
+          <svg class="accordion-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          <span style="font-weight:600;">${escapeHtml(title)}</span>
+          <span class="badge-mini-count">${escapeHtml(type)} · ${models.length} models</span>
+        </span>
+        <button class="icon-btn" onclick="event.stopPropagation(); removeProvider(${providerIndex})" title="Remove Provider">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+
+      <div class="accordion-content">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label data-tooltip-key="providerId">Provider ID</label>
+            <input type="text" data-scope="provider" data-provider-index="${providerIndex}" data-field="id" value="${escapeAttr(provider.id || "")}">
+          </div>
+          <div class="form-group">
+            <label data-tooltip-key="providerName">Display Name</label>
+            <input type="text" data-scope="provider" data-provider-index="${providerIndex}" data-field="name" value="${escapeAttr(provider.name || "")}">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label data-tooltip-key="providerType">API Type</label>
+            <select data-scope="provider" data-provider-index="${providerIndex}" data-field="type">
+              ${typeOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label data-tooltip-key="providerBaseUrl">Base URL</label>
+            <input type="text" data-scope="provider" data-provider-index="${providerIndex}" data-field="baseUrl" value="${escapeAttr(provider.baseUrl || "")}">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label data-tooltip-key="providerAuthKind">Auth Kind</label>
+            <select data-scope="provider" data-provider-index="${providerIndex}" data-field="auth.kind">
+              ${type === "anthropic" ? '<option value="api-key" selected>api-key</option>' : authKindOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label data-tooltip-key="providerAuthVal">Auth Value</label>
+            <div class="password-wrapper">
+              <input type="password" id="authVal_${providerIndex}" data-scope="provider" data-provider-index="${providerIndex}" data-field="auth.value" value="${escapeAttr(auth.value || "")}">
+              <button type="button" class="eye-btn" onclick="togglePasswordVisibility(${providerIndex})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label data-tooltip-key="providerHeaders">Custom Headers JSON</label>
+          <textarea data-scope="provider" data-provider-index="${providerIndex}" data-field="headers" placeholder="{}">${escapeHtml(headersStr)}</textarea>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; gap:6px; margin-top:4px;">
+          <button class="secondary btn-mini" type="button" onclick="fetchRemoteModels('${providerIndex}')" data-tooltip-key="fetchModels">
+            Fetch Remote Models
+          </button>
+          <button class="secondary btn-mini" type="button" onclick="addModel(${providerIndex})" data-tooltip-key="addModel">
+            + Add Model
+          </button>
+        </div>
+
+        ${renderRemoteModelsSection(provider, providerIndex)}
+
+        <div class="models-list-section">
+          <div style="font-weight: 700; margin-bottom: 2px;">Configured Models (${models.length})</div>
+          ${models.length ? models.map((model, modelIndex) => renderModel(providerIndex, model, modelIndex)).join("") : '<div class="empty-state">No models configured.</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRemoteModelsSection(provider, providerIndex) {
+  const key = provider.id || providerKey(providerIndex);
+  const state = remoteModels[key];
+  if (!state) return "";
+  if (state.loading) {
+    return `
+      <div class="remote-models-section">
+        <div style="font-weight:600; color:var(--vscode-focusBorder);">Fetching Remote Models...</div>
+      </div>
+    `;
+  }
+  if (state.error) {
+    return `
+      <div class="remote-models-section" style="border-color:var(--vscode-testing-iconFailed);">
+        <div style="font-weight:600; color:var(--vscode-testing-iconFailed);">Fetch Error:</div>
+        <div style="font-size:9px; color:var(--vscode-descriptionForeground);">${escapeHtml(state.error)}</div>
+      </div>
+    `;
+  }
+  const models = Array.isArray(state.models) ? state.models : [];
+  if (!models.length) {
+    return `
+      <div class="remote-models-section">
+        <div style="font-style:italic; color:var(--vscode-descriptionForeground);">No remote models found.</div>
+      </div>
+    `;
+  }
+  const items = models.map((m, idx) => `
+    <div class="remote-model-item" onclick="addRemoteModel(${providerIndex}, ${idx})">
+      <span style="font-weight:600; color:var(--vscode-foreground);">${escapeHtml(m.id)}</span>
+      <span style="font-size:8px; color:var(--vscode-descriptionForeground);">${escapeHtml(m.ownedBy || "")}</span>
+    </div>
+  `).join("");
+  return `
+    <div class="remote-models-section">
+      <div style="font-weight:700; color:var(--vscode-focusBorder); margin-bottom:4px;">Remote Models (${models.length}) - Click to Import:</div>
+      <div class="remote-model-list">
+        ${items}
+      </div>
+    </div>
+  `;
+}
+
+function renderModel(providerIndex, model, modelIndex) {
+  const key = modelKey(providerIndex, modelIndex);
+  const isOpen = modelOpen[key] === true;
+  const title = model.displayName || model.apiModel || model.id || "Unnamed Model";
+
+  return `
+    <div class="model-item${isOpen ? " open" : ""}">
+      <div class="model-header" onclick="toggleModel(${providerIndex}, ${modelIndex})">
+        <span style="display:flex; align-items:center; gap:4px; max-width:85%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          <svg class="accordion-arrow" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:${isOpen ? "rotate(90deg)" : "none"}; transition: transform var(--transition-fast);"><polyline points="9 18 15 12 9 6"/></svg>
+          <span style="font-weight:600;">${escapeHtml(title)}</span>
+          <span style="font-size:8px; color:var(--vscode-descriptionForeground);">(${escapeHtml(model.id || "")})</span>
+        </span>
+        <button class="icon-btn" onclick="event.stopPropagation(); removeModel(${providerIndex}, ${modelIndex})" title="Remove Model">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+
+      <div class="model-content">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label data-tooltip-key="modelId">Model ID</label>
+            <input type="text" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="id" value="${escapeAttr(model.id || "")}">
+          </div>
+          <div class="form-group">
+            <label data-tooltip-key="modelApiModel">API Model</label>
+            <input type="text" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="apiModel" value="${escapeAttr(model.apiModel || "")}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label data-tooltip-key="modelName">Display Name</label>
+          <input type="text" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="displayName" value="${escapeAttr(model.displayName || "")}">
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label data-tooltip-key="modelContextLimit">Context Token Limit</label>
+            <input type="number" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="contextTokenLimit" value="${escapeAttr(model.contextTokenLimit || "")}">
+          </div>
+          <div class="form-group">
+            <label data-tooltip-key="modelMaxContext">Max Mode Context</label>
+            <input type="number" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="contextTokenLimitForMaxMode" value="${escapeAttr(model.contextTokenLimitForMaxMode || "")}">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label data-tooltip-key="modelMaxOutput">Max Output Tokens</label>
+            <input type="number" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="maxOutputTokens" value="${escapeAttr(model.maxOutputTokens || "")}">
+          </div>
+          <div class="form-group">
+            <label data-tooltip-key="modelThinkingBudget">Thinking Budget Tokens</label>
+            <input type="number" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="thinkingBudgetTokens" value="${escapeAttr(model.thinkingBudgetTokens || "")}">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label data-tooltip-key="modelThinkingLevel">Thinking Level</label>
+            <input type="text" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="thinkingLevel" value="${escapeAttr(model.thinkingLevel || "")}">
+          </div>
+          <div></div>
+        </div>
+
+        <div class="form-group">
+          <label data-tooltip-key="modelCapabilities">Capabilities</label>
+          <div class="checkbox-grid">
+            <label class="checkbox-label" data-tooltip-key="capAgent"><input type="checkbox" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="supportsAgent"${model.supportsAgent !== false ? " checked" : ""}> Agent</label>
+            <label class="checkbox-label" data-tooltip-key="capImages"><input type="checkbox" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="supportsImages"${model.supportsImages ? " checked" : ""}> Images</label>
+            <label class="checkbox-label" data-tooltip-key="capCmdK"><input type="checkbox" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="supportsCmdK"${model.supportsCmdK ? " checked" : ""}> Cmd-K</label>
+            <label class="checkbox-label" data-tooltip-key="capPlan"><input type="checkbox" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="supportsPlan"${model.supportsPlan ? " checked" : ""}> Plan</label>
+            <label class="checkbox-label" data-tooltip-key="capAutoContext"><input type="checkbox" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="supportsAutoContext"${model.supportsAutoContext ? " checked" : ""}> Auto Context</label>
+            <label class="checkbox-label" data-tooltip-key="capThinking"><input type="checkbox" data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="thinking"${model.thinking ? " checked" : ""}> Thinking</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label data-tooltip-key="modelTooltipMarkdown">Tooltip Markdown</label>
+          <textarea data-scope="model" data-provider-index="${providerIndex}" data-model-index="${modelIndex}" data-field="tooltipMarkdown" placeholder="Tooltip display text">${escapeHtml(model.tooltipMarkdown || "")}</textarea>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleProvider(idx) {
+  const key = providerKey(idx);
+  providerOpen[key] = providerOpen[key] === false;
+  saveActiveElement();
+  renderProvidersList();
+  restoreActiveElement();
+}
+
+function toggleModel(pIdx, mIdx) {
+  const key = modelKey(pIdx, mIdx);
+  modelOpen[key] = !modelOpen[key];
+  saveActiveElement();
+  renderProvidersList();
+  restoreActiveElement();
+}
+
+function removeProvider(idx) {
+  registerInteraction();
+  draftProviders.splice(idx, 1);
+  saveActiveElement();
+  renderProvidersList();
+  restoreActiveElement();
+  debouncedSave();
+}
+
+function removeModel(pIdx, mIdx) {
+  registerInteraction();
+  const provider = draftProviders[pIdx];
+  if (provider && Array.isArray(provider.models)) {
+    provider.models.splice(mIdx, 1);
+    saveActiveElement();
+    renderProvidersList();
+    restoreActiveElement();
+    debouncedSave();
+  }
+}
+
+function addProvider() {
+  registerInteraction();
+  const tempId = "provider-" + (draftProviders.length + 1);
+  draftProviders.push({
+    id: tempId,
+    name: "New Provider",
+    type: "openai-chat",
+    baseUrl: "",
+    auth: { kind: "bearer", value: "" },
+    models: []
+  });
+  providerOpen[tempId] = true;
+  saveActiveElement();
+  renderProvidersList();
+
+  const newProviderIndex = draftProviders.length - 1;
+  const inputEl = document.querySelector(`[data-scope="provider"][data-provider-index="${newProviderIndex}"][data-field="id"]`);
+  if (inputEl) {
+    inputEl.focus();
+  } else {
+    restoreActiveElement();
+  }
+
+  debouncedSave();
+}
+
+function addModel(pIdx) {
+  registerInteraction();
+  const provider = draftProviders[pIdx];
+  if (!provider) return;
+  if (!Array.isArray(provider.models)) provider.models = [];
+  const tempId = "model-" + (provider.models.length + 1);
+  provider.models.push({
+    id: tempId,
+    apiModel: "",
+    displayName: "",
+    supportsAgent: true
+  });
+  modelOpen[providerKey(pIdx) + ":" + tempId] = true;
+  saveActiveElement();
+  renderProvidersList();
+
+  const newModelIndex = provider.models.length - 1;
+  const inputEl = document.querySelector(`[data-scope="model"][data-provider-index="${pIdx}"][data-model-index="${newModelIndex}"][data-field="id"]`);
+  if (inputEl) {
+    inputEl.focus();
+  } else {
+    restoreActiveElement();
+  }
+
+  debouncedSave();
+}
+
+function togglePasswordVisibility(providerIndex) {
+  const el = element("authVal_" + providerIndex);
+  if (el) {
+    el.type = el.type === "password" ? "text" : "password";
+  }
+}
+
+function toggleRevealTarget(targetId) {
+  const el = element(targetId);
+  if (el && (el.type === "password" || el.type === "text")) {
+    el.type = el.type === "password" ? "text" : "password";
+  }
+}
+
+function fetchRemoteModels(providerIndex) {
+  registerInteraction();
+  const provider = draftProviders[providerIndex];
+  if (!provider) return;
+  const key = provider.id || providerKey(providerIndex);
+  if (!provider.baseUrl || !String(provider.baseUrl).trim()) {
+    showToast("Base URL is required to fetch remote models.", "error");
+    return;
+  }
+  if (!provider.auth || !provider.auth.value || !String(provider.auth.value).trim()) {
+    showToast("Auth value is required to fetch remote models.", "error");
+    return;
+  }
+  remoteModels[key] = { loading: true };
+  saveActiveElement();
+  renderProvidersList();
+  restoreActiveElement();
+  post("fetchRemoteModels", { pid: key, provider: normalizeProviderForWire(provider) });
+}
+
+function addRemoteModel(providerKeyOrIndex, remoteIndex) {
+  registerInteraction();
+  const providerIndex = typeof providerKeyOrIndex === "number"
+    ? providerKeyOrIndex
+    : providerIndexForKey(providerKeyOrIndex);
+  const provider = draftProviders[providerIndex];
+  if (!provider) return;
+  const key = provider.id || providerKey(providerIndex);
+  const remote = remoteModels[key] && remoteModels[key].models ? remoteModels[key].models[remoteIndex] : null;
+  if (!remote || !remote.id) return;
+  if (!Array.isArray(provider.models)) provider.models = [];
+  provider.models.push({
+    id: remote.id,
+    apiModel: remote.id,
+    displayName: remote.id,
+    supportsAgent: true
+  });
+  modelOpen[providerKey(providerIndex) + ":" + remote.id] = true;
+  saveActiveElement();
+  renderProvidersList();
+  restoreActiveElement();
+  saveProviders();
+}
+
+function handleFieldEvent(event) {
+  registerInteraction();
+  const target = event.target;
+  if (!target || target.dataset.field === undefined) return;
+  const providerIndex = Number(target.dataset.providerIndex);
+  const modelIndex = Number(target.dataset.modelIndex);
+  const provider = draftProviders[providerIndex];
+  if (!provider) return;
+
+  const value = target.type === "checkbox" ? target.checked : target.value;
+  const field = target.dataset.field;
+
+  if (target.dataset.scope === "provider") {
+    if (field === "id") {
+      const oldKey = providerKey(providerIndex);
+      const isCurrentlyOpen = providerOpen[oldKey] !== false;
+      provider.id = value;
+      const newKey = providerKey(providerIndex);
+      providerOpen[newKey] = isCurrentlyOpen;
+    } else if (field === "name") {
+      provider.name = value;
+    } else if (field === "type") {
+      provider.type = value;
+    } else if (field === "baseUrl") {
+      provider.baseUrl = value;
+    } else if (field === "auth.kind") {
+      provider.auth = provider.auth || {};
+      provider.auth.kind = value;
+    } else if (field === "auth.value") {
+      provider.auth = provider.auth || {};
+      provider.auth.value = value;
+    } else if (field === "headers") {
+      provider.headers = value;
+    }
+  } else if (target.dataset.scope === "model") {
+    const models = provider.models || [];
+    const model = models[modelIndex];
+    if (model) {
+      if (field === "id") {
+        const oldKey = modelKey(providerIndex, modelIndex);
+        const isCurrentlyOpen = modelOpen[oldKey] === true;
+        model.id = value;
+        const newKey = modelKey(providerIndex, modelIndex);
+        modelOpen[newKey] = isCurrentlyOpen;
+      } else if (field === "apiModel") {
+        model.apiModel = value;
+      } else if (field === "displayName") {
+        model.displayName = value;
+      } else if (field === "contextTokenLimit" || field === "contextTokenLimitForMaxMode" || field === "maxOutputTokens" || field === "thinkingBudgetTokens") {
+        const parsed = Number.parseInt(value, 10);
+        if (Number.isInteger(parsed) && parsed > 0) {
+          model[field] = parsed;
+        } else {
+          delete model[field];
+        }
+      } else if (field === "thinkingLevel") {
+        model.thinkingLevel = value;
+      } else if (field === "tooltipMarkdown") {
+        model.tooltipMarkdown = value;
+      } else if (target.type === "checkbox") {
+        model[field] = target.checked;
+      }
+    }
+  }
+
+  debouncedSave();
+}
+
+const PRESETS = {
+  deepseek: {
+    id: "deepseek",
+    name: "DeepSeek",
+    type: "openai-chat",
+    baseUrl: "https://api.deepseek.com",
+    auth: { kind: "bearer", value: "" },
+    models: [
+      {
+        id: "deepseek-chat",
+        apiModel: "deepseek-chat",
+        displayName: "DeepSeek Chat",
+        contextTokenLimit: 64000,
+        maxOutputTokens: 8192,
+        supportsAgent: true,
+        supportsImages: false,
+        thinking: false
+      },
+      {
+        id: "deepseek-reasoner",
+        apiModel: "deepseek-reasoner",
+        displayName: "DeepSeek Reasoner",
+        contextTokenLimit: 64000,
+        maxOutputTokens: 8192,
+        supportsAgent: true,
+        supportsImages: false,
+        thinking: true,
+        thinkingLevel: "high"
+      }
+    ]
+  },
+  openai: {
+    id: "openai",
+    name: "OpenAI",
+    type: "openai-chat",
+    baseUrl: "https://api.openai.com/v1",
+    auth: { kind: "bearer", value: "" },
+    models: [
+      {
+        id: "gpt-4o",
+        apiModel: "gpt-4o",
+        displayName: "GPT-4o",
+        contextTokenLimit: 128000,
+        maxOutputTokens: 4096,
+        supportsAgent: true,
+        supportsImages: true
+      },
+      {
+        id: "gpt-4o-mini",
+        apiModel: "gpt-4o-mini",
+        displayName: "GPT-4o Mini",
+        contextTokenLimit: 128000,
+        maxOutputTokens: 16384,
+        supportsAgent: true,
+        supportsImages: true
+      }
+    ]
+  },
+  anthropic: {
+    id: "anthropic",
+    name: "Anthropic",
+    type: "anthropic",
+    baseUrl: "https://api.anthropic.com/v1",
+    auth: { kind: "api-key", value: "" },
+    models: [
+      {
+        id: "claude-3-5-sonnet",
+        apiModel: "claude-3-5-sonnet-20241022",
+        displayName: "Claude 3.5 Sonnet",
+        contextTokenLimit: 200000,
+        maxOutputTokens: 8192,
+        supportsAgent: true,
+        supportsImages: true
+      },
+      {
+        id: "claude-3-5-haiku",
+        apiModel: "claude-3-5-haiku-20241022",
+        displayName: "Claude 3.5 Haiku",
+        contextTokenLimit: 200000,
+        maxOutputTokens: 8192,
+        supportsAgent: true,
+        supportsImages: false
+      }
+    ]
+  },
+  openrouter: {
+    id: "openrouter",
+    name: "OpenRouter",
+    type: "openai-chat",
+    baseUrl: "https://openrouter.ai/api/v1",
+    auth: { kind: "bearer", value: "" },
+    models: [
+      {
+        id: "anthropic/claude-3.5-sonnet",
+        apiModel: "anthropic/claude-3.5-sonnet",
+        displayName: "Claude 3.5 Sonnet (OpenRouter)",
+        contextTokenLimit: 200000,
+        maxOutputTokens: 8192,
+        supportsAgent: true,
+        supportsImages: true
+      }
+    ]
+  },
+  siliconflow: {
+    id: "siliconflow",
+    name: "SiliconFlow",
+    type: "openai-chat",
+    baseUrl: "https://api.siliconflow.cn/v1",
+    auth: { kind: "bearer", value: "" },
+    models: [
+      {
+        id: "deepseek-ai/DeepSeek-V3",
+        apiModel: "deepseek-ai/DeepSeek-V3",
+        displayName: "DeepSeek V3 (SiliconFlow)",
+        contextTokenLimit: 64000,
+        maxOutputTokens: 8192,
+        supportsAgent: true
+      },
+      {
+        id: "deepseek-ai/DeepSeek-R1",
+        apiModel: "deepseek-ai/DeepSeek-R1",
+        displayName: "DeepSeek R1 (SiliconFlow)",
+        contextTokenLimit: 64000,
+        maxOutputTokens: 8192,
+        supportsAgent: true,
+        thinking: true
+      }
+    ]
+  }
+};
+
+function applyPreset(choice) {
+  registerInteraction();
+  if (!choice || !PRESETS[choice]) return;
+  const template = clone(PRESETS[choice]);
+  const existingIdx = draftProviders.findIndex(p => p.id === template.id);
+  if (existingIdx !== -1) {
+    if (typeof confirm === "function") {
+      if (!confirm(`已经存在 ID 为 "${template.id}" 的 Provider，是否覆盖其配置？`)) {
+        return;
+      }
+    }
+    draftProviders[existingIdx] = template;
+  } else {
+    draftProviders.push(template);
+  }
+  providerOpen[template.id] = true;
+  saveActiveElement();
+  renderProvidersList();
+  restoreActiveElement();
+  debouncedSave();
+  showToast(`Applied ${template.name} Preset.`, "info");
+}
+
+function toggleAdvancedAccordion() {
+  isAdvancedOpen = !isAdvancedOpen;
+  const content = element("advancedContent");
+  const arrow = element("advancedArrow");
+  const accordion = element("advancedDebugAccordion");
+  if (content && arrow && accordion) {
+    content.style.display = isAdvancedOpen ? "flex" : "none";
+    arrow.style.transform = isAdvancedOpen ? "rotate(90deg)" : "none";
+    if (isAdvancedOpen) {
+      accordion.classList.add("open");
+    } else {
+      accordion.classList.remove("open");
+    }
+  }
+}
+
+function updateStatus(state) {
+  currentState = state || {};
+
+  const serverEl = element("server");
+  const serverIndicator = element("serverIndicator");
+  const modeEl = element("mode");
+  const modelsEl = element("models");
+  const routesEl = element("routes");
+  const fileLogInput = element("fileLogInput");
+  const routesBadgeCount = element("routesBadgeCount");
+
+  const byokModeInput = element("byokModeInput");
+
+  const isSharedServer = currentState.serverOwner === "shared";
+  if (serverEl) {
+    serverEl.textContent = currentState.running
+      ? ((isSharedServer ? "shared " : "") + currentState.host + ":" + currentState.port)
+      : "OFF";
+  }
+  if (serverIndicator) {
+    serverIndicator.className = "pulse-indicator" + (currentState.running ? "" : " stopped");
+  }
+  const byokAvailable = !!currentState.mode && !!currentState.running;
+  if (modeEl) {
+    modeEl.innerHTML = byokAvailable
+      ? '<span class="badge active">ON</span>'
+      : currentState.mode
+        ? '<span class="badge inactive">Server Off</span>'
+        : '<span class="badge inactive">OFF</span>';
+  }
+
+  if (byokModeInput) {
+    byokModeInput.checked = byokAvailable;
+  }
+  if (fileLogInput) {
+    fileLogInput.checked = !!currentState.fileLog;
+  }
+
+  const routeCountVal = currentState.routes || 0;
+  if (routesEl) {
+    routesEl.textContent = String(routeCountVal);
+  }
+  if (routesBadgeCount) {
+    routesBadgeCount.textContent = routeCountVal + " routes";
+  }
+  if (modelsEl) {
+    modelsEl.textContent = String(currentState.models || 0);
+  }
+
+  const startBtn = document.querySelector('button[data-command="start"]');
+  const stopBtn = document.querySelector('button[data-command="stop"]');
+  if (startBtn) startBtn.disabled = !!currentState.running;
+  if (stopBtn) stopBtn.disabled = !currentState.running || isSharedServer;
+
+  const isUserEditing = document.activeElement &&
+    (document.activeElement.tagName === "INPUT" ||
+     document.activeElement.tagName === "SELECT" ||
+     document.activeElement.tagName === "TEXTAREA");
+
+  const providers = currentState.providersConfig && Array.isArray(currentState.providersConfig.providers)
+    ? currentState.providersConfig.providers
+    : Array.isArray(currentState.providersData)
+      ? currentState.providersData
+      : [];
+
+  const isProtected = (Date.now() - lastInteractionTime) < 1500;
+
+  if (!isUserEditing && !isProtected) {
+    draftProviders = clone(providers) || [];
+    draftProviders.forEach((provider, index) => {
+      const key = provider.id || "provider-" + index;
+      if (providerOpen[key] === undefined) {
+        providerOpen[key] = (index === 0);
+      }
+    });
+    syncDraftWebToolsFromConfig(currentState.providersConfig || {});
+    saveActiveElement();
+    renderProvidersList();
+    renderWebToolsPanel();
+    restoreActiveElement();
+  }
+}
+
+const byokCard = element("byokModeSwitchCard");
+if (byokCard) {
+  byokCard.addEventListener("click", (event) => {
+    const input = element("byokModeInput");
+    if (input && event.target !== input) {
+      input.checked = !input.checked;
+      post("setEnabled", { enabled: input.checked });
+    }
+  });
+}
+
+const byokModeInput = element("byokModeInput");
+if (byokModeInput) {
+  byokModeInput.addEventListener("change", () => {
+    post("setEnabled", { enabled: byokModeInput.checked });
+  });
+}
+
+for (const button of document.querySelectorAll("button[data-command]")) {
+  button.addEventListener("click", () => {
+    post(button.dataset.command);
+  });
+}
+
+const switchInput = element("fileLogInput");
+const fileLogSwitch = element("fileLogSwitch");
+if (fileLogSwitch) {
+  fileLogSwitch.addEventListener("click", (e) => {
+    if (e.target !== switchInput) {
+      switchInput.checked = !switchInput.checked;
+    }
+    post("toggleFileLog");
+  });
+}
+
+const providersContainer = element("providersContainer");
+if (providersContainer) {
+  providersContainer.addEventListener("input", handleFieldEvent);
+  providersContainer.addEventListener("change", handleFieldEvent);
+}
+
+const webToolsCard = element("webToolsCard");
+if (webToolsCard) {
+  webToolsCard.addEventListener("input", handleWebToolsFieldEvent);
+  webToolsCard.addEventListener("change", handleWebToolsFieldEvent);
+  webToolsCard.addEventListener("click", function(event) {
+    const revealButton = event.target.closest("[data-reveal-target]");
+    if (!revealButton) return;
+    event.preventDefault();
+    toggleRevealTarget(revealButton.dataset.revealTarget);
+  });
+}
+
+for (const tabButton of document.querySelectorAll("[data-web-tools-tab]")) {
+  tabButton.addEventListener("click", function() {
+    registerInteraction();
+    setWebToolsTab(tabButton.dataset.webToolsTab);
+  });
+}
+
+  // addProviderBtn binding removed as it is now inline onclick
+bindClick("saveProvidersBtn", saveProviders);
+bindClick("refreshProvidersBtn", function() { post("refresh"); });
+bindClick("editProvidersJsonBtn", function() { post("editProvidersJson"); });
+
+function bindClick(id, handler) {
+  const target = element(id);
+  if (target) target.addEventListener("click", handler);
+}
+
+window.addEventListener("message", (event) => {
+  const message = event.data || {};
+  const type = message.type || message.command;
+  if (type === "state") {
+    updateStatus(message.state || {});
+    return;
+  }
+  if (type === "remoteModelsResult") {
+    remoteModels[message.pid] = message.error
+      ? { loading: false, error: message.error }
+      : { loading: false, models: message.models || [] };
+    saveActiveElement();
+    renderProvidersList();
+    restoreActiveElement();
+    return;
+  }
+  if (type === "toast") {
+    showToast(message.text || "", message.level || "info", message.duration || 4000);
+  }
+});
+
+(function initTooltips() {
+  const tooltip = document.getElementById("tooltip");
+  if (!tooltip) return;
+
+  const tooltipsData = {
+  "byokAvailability": "<h4>BYOK</h4><div style=\"font-weight:600;margin-bottom:4px;\">Controls whether configured BYOK models are usable from Cursor.</div><ul><li><strong>On:</strong> starts or attaches to the local adapter server if needed, then enables BYOK interception.</li><li><strong>Off:</strong> disables BYOK interception so requests use Cursor's official path.</li></ul><div class=\"tooltip-sub\">BYOK is available only when interception is enabled and the local adapter server is running.</div>",
+  "byokServer": "<h4>BYOK Server</h4><div style=\"font-weight:600;margin-bottom:4px;\">Shows the local adapter server selected for <code>127.0.0.1</code> and its adaptive port.</div><ul><li><strong>Running:</strong> the hook can call <code>/byok/should-handle</code>, <code>/byok/run</code>, and <code>/byok/models</code>.</li><li><strong>Off:</strong> BYOK models cannot run locally.</li></ul><div class=\"tooltip-sub\">Use Advanced & Debug Tools to start, stop, or restart the server.</div>",
+  "providerId": "<h4>Provider ID</h4><div>Stable local identifier for this provider. It is used in <code>providers.json</code>, model metadata, GUI state, and server-side provider lookup. It is not the upstream account or organization id.</div>",
+  "providerName": "<h4>Display Name</h4><div>Human-readable provider name shown in this panel.</div>",
+  "providerType": "<h4>API Type</h4><div>Provider API family: <code>openai-chat</code>, <code>openai-responses</code>, or <code>anthropic</code>.</div>",
+  "providerBaseUrl": "<h4>Base URL</h4><div>Base endpoint for the provider API. For OpenAI-compatible providers, model fetching appends <code>/models</code> when needed.</div>",
+  "providerAuthKind": "<h4>Auth Kind</h4><div>Authentication header style. <code>bearer</code> sends <code>Authorization: Bearer ...</code>; <code>api-key</code> sends <code>api-key: ...</code>.</div>",
+  "providerAuthVal": "<h4>Auth Value</h4><div>API key or token used for provider requests.</div>",
+  "providerHeaders": "<h4>Custom Headers JSON</h4><div>Additional HTTP headers as a JSON object.</div>",
+  "fetchModels": "<h4>Fetch Remote Models</h4><div>Fetches <code>/models</code> from this provider and shows importable model ids without deleting existing providers.</div>",
+  "addModel": "<h4>Add Model</h4><div>Adds a manual model entry under this provider.</div>",
+  "modelId": "<h4>Model ID</h4><div>Public model id registered into Cursor. Keep it stable once conversations depend on it.</div>",
+  "modelApiModel": "<h4>API Model</h4><div>Actual upstream model name sent to the provider API.</div>",
+  "modelName": "<h4>Display Name</h4><div>Model label shown in Cursor UI.</div>",
+  "modelContextLimit": "<h4>Context Token Limit</h4><div>Model context window used for Cursor model metadata.</div>",
+  "modelMaxContext": "<h4>Max Mode Context</h4><div>Context limit advertised for max/long-context mode.</div>",
+  "modelMaxOutput": "<h4>Max Output Tokens</h4><div>Maximum output token budget sent to providers when supported.</div>",
+  "modelThinkingBudget": "<h4>Thinking Budget Tokens</h4><div>Reasoning budget metadata for thinking-capable models.</div>",
+  "modelThinkingLevel": "<h4>Thinking Level</h4><div>Reasoning intensity metadata such as <code>low</code>, <code>medium</code>, or <code>high</code>.</div>",
+  "modelCapabilities": "<h4>Capabilities</h4><div>Feature flags exposed in Cursor model metadata.</div>",
+  "modelTooltipMarkdown": "<h4>Tooltip Markdown</h4><div>Markdown shown by Cursor when hovering over this model in model selection UI.</div>",
+  "capAgent": "<h4>Agent</h4><div>Allows this model to run in Agent mode.</div>",
+  "capImages": "<h4>Images</h4><div>Advertises image input support.</div>",
+  "capCmdK": "<h4>Cmd-K</h4><div>Allows this model in inline edit workflows.</div>",
+  "capPlan": "<h4>Plan</h4><div>Allows this model in planning workflows.</div>",
+  "capAutoContext": "<h4>Auto Context</h4><div>Advertises automatic context support.</div>",
+  "capThinking": "<h4>Thinking</h4><div>Advertises reasoning/thinking support.</div>",
+  "groupService": "<h4>Service & Integration</h4><div>Controls local server lifecycle and workbench integration.</div>",
+  "groupDiagnostics": "<h4>Diagnostics & Config</h4><div>Config, logs, and troubleshooting controls.</div>",
+  "btnStart": "<h4>Start Server</h4><div>Starts the local BYOK adapter server.</div>",
+  "btnStop": "<h4>Stop Server</h4><div>Stops the local BYOK adapter server.</div>",
+  "btnToggle": "<h4>Toggle Interception</h4><div>Toggles BYOK request interception.</div>",
+  "btnInstallHook": "<h4>Install Hook</h4><div>Installs the Cursor workbench hook. Restart Cursor after installing.</div>",
+  "btnSaveConfig": "<h4>Save Config</h4><div>Writes the current provider/model config to disk.</div>",
+  "btnRefresh": "<h4>Refresh</h4><div>Reloads provider config from disk.</div>",
+  "btnOpenProviders": "<h4>Open Providers</h4><div>Opens <code>providers.json</code>.</div>",
+  "webToolsSearchTab": "<h4>Web Search</h4><div>Configure BYOK server-side WebSearch. Exa runs locally through <code>/byok/client-tool-completion</code>.</div>",
+  "webToolsFetchTab": "<h4>Web Fetch</h4><div>Configure BYOK server-side WebFetch. Builtin uses <code>@vakra-dev/supermarkdown</code> when installed.</div>",
+  "webToolsSearchHint": "<h4>WebSearch</h4><div>Stored in <code>providers.json</code> under <code>webSearch</code>. Choose <code>client</code> to always wait for Cursor, or <code>exa</code> for server-side search when a key is configured.</div>",
+  "webToolsFetchHint": "<h4>WebFetch</h4><div>Stored in <code>providers.json</code> under <code>webFetch</code>. Builtin is the default and needs no API key.</div>",
+  "webSearchProvider": "<h4>Search Provider</h4><div><code>client</code> uses the Cursor interaction bridge. <code>exa</code> runs search on the BYOK server when an API key or <code>EXA_API_KEY</code> is available.</div>",
+  "webSearchType": "<h4>Exa Search Type</h4><div>Passed through to Exa as <code>type</code>: <code>auto</code>, <code>fast</code>, or <code>deep</code>.</div>",
+  "webSearchApiKey": "<h4>Exa API Key</h4><div>Saved in <code>providers.json</code>. If omitted here, BYOK can still use <code>EXA_API_KEY</code> from the environment.</div>",
+  "webSearchBaseUrl": "<h4>Exa Base URL</h4><div>Defaults to <code>https://api.exa.ai</code>.</div>",
+  "webSearchMaxResults": "<h4>Max Results</h4><div>Upper bound for Exa <code>numResults</code>. Capped at 100.</div>",
+  "webFetchApiKey": "<h4>Fetch API Key</h4><div>Required for Jina or Firecrawl. Env fallbacks: <code>JINA_API_KEY</code>, <code>FIRECRAWL_API_KEY</code>.</div>",
+  "webFetchBaseUrl": "<h4>Firecrawl Base URL</h4><div>Defaults to <code>https://api.firecrawl.dev</code>.</div>",
+  "btnOpenRoutes": "<h4>Open Routes</h4><div>Opens <code>routes.json</code>.</div>",
+  "btnOpenLog": "<h4>Open Log File</h4><div>Opens the BYOK log file.</div>",
+  "btnSettings": "<h4>Settings</h4><div>Opens Cursor BYOK settings.</div>",
+  "switchFileLog": "<h4>Write File Log</h4><div>Toggles file logging for BYOK diagnostics.</div>",
+  "quickAddDeepseek": "<h4>DeepSeek Preset</h4><div>Adds a DeepSeek provider template.</div>",
+  "quickAddOpenai": "<h4>OpenAI Preset</h4><div>Adds an OpenAI provider template.</div>",
+  "quickAddAnthropic": "<h4>Anthropic Preset</h4><div>Adds an Anthropic provider template.</div>",
+  "quickAddCustom": "<h4>Custom Provider</h4><div>Adds an empty provider for manual setup.</div>"
+};
+
+  function positionTooltip(targetEl) {
+    const rect = targetEl.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    let top = rect.bottom + window.scrollY + 8;
+    let left = rect.left + window.scrollX;
+    if (left + tooltipRect.width > window.innerWidth) left = window.innerWidth - tooltipRect.width - 12;
+    if (left < 12) left = 12;
+    if (rect.bottom + tooltipRect.height + 15 > window.innerHeight) {
+      top = rect.top + window.scrollY - tooltipRect.height - 8;
+    }
+    tooltip.style.top = top + "px";
+    tooltip.style.left = left + "px";
+  }
+
+  if (typeof document.addEventListener === "function") {
+    let currentHoveredEl = null;
+    document.addEventListener("mouseover", (event) => {
+      const target = event.target.closest("[data-tooltip-key]");
+      if (!target || target === currentHoveredEl) return;
+      currentHoveredEl = target;
+      const html = tooltipsData[target.getAttribute("data-tooltip-key")];
+      if (!html) return;
+      tooltip.innerHTML = html;
+      tooltip.classList.add("visible");
+      positionTooltip(target);
+    });
+    document.addEventListener("mouseout", (event) => {
+      const target = event.target.closest("[data-tooltip-key]");
+      if (!target) return;
+      const relatedTarget = event.relatedTarget ? event.relatedTarget.closest("[data-tooltip-key]") : null;
+      if (relatedTarget === currentHoveredEl) return;
+      currentHoveredEl = null;
+      tooltip.classList.remove("visible");
+    });
+  }
+})();
+
+renderWebToolsPanel();
+post("ready");
+</script>
+</body>
+</html>

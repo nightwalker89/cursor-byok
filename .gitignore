@@ -1,0 +1,11 @@
+.grok/
+node_modules/
+*.vsix
+*.tgz
+.DS_Store
+.playwright-mcp/
+npm-debug.log*
+coverage/
+BYOK_TOOL_DEBUG_PROGRESS.md
+docs/mcp-tool-cache-analysis.txt
+proposals/mcp-tool-cache-analysis.txt
