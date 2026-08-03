@@ -420,6 +420,46 @@ test("workbench submitChat patch survives same-named decoy methods and a restruc
   assert.match(patched, /__cursorByokHasSubmitModelCandidate\(yt,Ut,t,Xe\.data\)/);
   assert.equal(patched.includes(decoy), true);
 });
+test("workbench submitChat follows the seam into _submitChatMaybeAbortCurrent and patches the split router guard", () => {
+  // Newer Cursor builds split submitChatMaybeAbortCurrent into a thin public
+  // wrapper that delegates to _submitChatMaybeAbortCurrent, and split the
+  // router guard into two declarators: the agentBackend binding and the flag
+  // that compares against it. The patch must follow the seam into the private
+  // method and edit only the flag declarator's init, leaving the backend
+  // binding (referenced later in the body) intact.
+  const wrapper = 'async submitChatMaybeAbortCurrent(e,t,n){const i=await this.acquirePreGenerationSubmission(e);try{await this._submitChatMaybeAbortCurrent(e,t,n)}finally{i()}}';
+  const source =
+    `class a{${wrapper}}class b{async _submitChatMaybeAbortCurrent(e,t,n){void n?._internalTurnTracker;const Bd=kt.data.agentBackend??"cursor-agent",Rf=Bd!=="cursor-agent";this._structuredLogService.info("composer","Starting stream request",{requestId:Oe,composerId:e,useAgentProviderRouter:Rf,modelName:Mi.modelName,conversationLength:kt.data.fullConversationHeadersOnly.length});const fr=this._buildAgentRequestHeaders();if(Rf){if(!this.isModelCompatibleWithClaudeCodeBackend(ls))throw new xNp(Mi.modelName??"unknown");Qi.run()}}}`;
+  const patched = patchAgentProviderRouterGuard(source);
+  assert.notEqual(patched, source);
+  assert.match(patched, /__cursorByokHasSubmitModelCandidate\(ls,Mi,n,kt\.data\)/);
+  assert.match(patched, /__cursorByokRememberComposerMode\(Oe,kt\.data&&kt\.data\.unifiedMode\)/);
+  assert.match(patched, /useAgentProviderRouter:Rf/);
+  assert.match(patched, /if\(Rf\)\{if\(!this\.isModelCompatibleWithClaudeCodeBackend\(ls\)\)throw new xNp\(Mi\.modelName\?\?"unknown"\)/);
+  // The agentBackend binding is preserved; only the flag declarator's init is
+  // extended with the BYOK candidate check.
+  assert.match(patched, /const Bd=kt\.data\.agentBackend\?\?"cursor-agent",Rf=Bd!=="cursor-agent"&&!\(/);
+  // The public wrapper is untouched.
+  assert.equal(patched.includes(wrapper), true);
+
+  const run = new Function("globalThis", "kt", "Mi", "ls", "Oe", "e", "n", `
+    ${patched.slice(patched.indexOf("const Bd="), patched.indexOf("const fr="))}
+    return Rf;
+  `);
+  const logger = { _structuredLogService: { info: () => {} } };
+  const evalGuard = (globalThisValue, conversation, modelDetails, selectedModel, requestId, composerId, submitOptions = {}) =>
+    run.call(logger, globalThisValue, conversation, modelDetails, selectedModel, requestId, composerId, submitOptions);
+  const baseConversation = { data: { fullConversationHeadersOnly: [], unifiedMode: "plan" } };
+  // Without the BYOK hook installed, a non-cursor-agent backend routes as before.
+  assert.equal(evalGuard({}, { ...baseConversation, data: { ...baseConversation.data, agentBackend: "claude-code" } }, { modelName: "official-model" }, "official-model", "request-1", "composer-1"), true);
+  // A BYOK candidate model is suppressed from the agent-provider router.
+  assert.equal(evalGuard({ __cursorByokHasSubmitModelCandidate: () => true }, { ...baseConversation, data: { ...baseConversation.data, agentBackend: "claude-code" } }, { modelName: "byok-model" }, "byok-model", "request-2", "composer-2"), false);
+  // The cursor-agent backend never routes regardless of the BYOK check.
+  assert.equal(evalGuard({ __cursorByokHasSubmitModelCandidate: () => true }, { ...baseConversation, data: { ...baseConversation.data, agentBackend: "cursor-agent" } }, { modelName: "byok-model" }, "byok-model", "request-3", "composer-3"), false);
+  // An undefined agentBackend coalesces to "cursor-agent" and does not route.
+  assert.equal(evalGuard({}, { ...baseConversation, data: { ...baseConversation.data, agentBackend: undefined } }, { modelName: "official-model" }, "official-model", "request-4", "composer-4"), false);
+});
+
 
 test("workbench local agent path falls back to Connect transport for BYOK model ids", async () => {
   const source =

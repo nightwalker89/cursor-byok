@@ -8,23 +8,52 @@ const { applyEdits, findAnchors, methodAt, parseClassMethod, walk } = require(".
 // identifier (flag, conversation, selected model, model details, submit
 // options, request id) is read from the AST instead of guessed by regex
 // backscans over the surrounding minified text.
-const SUBMIT_METHOD_ANCHOR = "async submitChatMaybeAbortCurrent(";
-const SUBMIT_METHOD_HEAD = /async submitChatMaybeAbortCurrent\(([^)]*)\)\{/;
+//
+// Newer builds split `submitChatMaybeAbortCurrent` into a thin public wrapper
+// that delegates to a private `_submitChatMaybeAbortCurrent` carrying the
+// router-guard seam. Both anchors are searched; candidate qualification (the
+// seam actually being present) naturally selects whichever method owns it.
+const SUBMIT_METHOD_ANCHORS = [
+  { anchor: "async submitChatMaybeAbortCurrent(", head: /async submitChatMaybeAbortCurrent\(([^)]*)\)\{/ },
+  { anchor: "async _submitChatMaybeAbortCurrent(", head: /async _submitChatMaybeAbortCurrent\(([^)]*)\)\{/ },
+];
 
 function patchAgentProviderRouterGuard(content) {
   // The method name may appear on more than one class; a site qualifies only
   // when its method actually contains the router-guard seam, and exactly one
-  // site may qualify.
+  // site may qualify. Searching both the public and private method names lets
+  // the patch follow the seam across the wrapper/private refactor.
   const candidates = [];
-  for (const anchor of findAnchors(content, SUBMIT_METHOD_ANCHOR)) {
-    const method = methodAt(content, anchor, SUBMIT_METHOD_HEAD);
-    if (!method) continue;
-    const edited = patchSubmitMethodSource(method.source);
-    if (edited !== null && edited !== method.source) candidates.push({ method, edited });
+  for (const { anchor, head } of SUBMIT_METHOD_ANCHORS) {
+    for (const idx of findAnchors(content, anchor)) {
+      const method = methodAt(content, idx, head);
+      if (!method) continue;
+      const edited = patchSubmitMethodSource(method.source);
+      if (edited !== null && edited !== method.source) candidates.push({ method, edited });
+    }
   }
   if (candidates.length !== 1) return content;
   const { method, edited } = candidates[0];
   return content.slice(0, method.start) + edited + content.slice(method.end);
+}
+
+// Locates the `CONV.data.agentBackend` member expression anywhere under a
+// node. The property names (`agentBackend`, `data`) are minification-stable;
+// the conversation handle identifier is read from the AST.
+function findAgentBackendMember(root) {
+  let found = null;
+  walk(root, (node) => {
+    if (found) return false;
+    if (node.type === "MemberExpression"
+      && node.property?.type === "Identifier" && node.property.name === "agentBackend"
+      && node.object?.type === "MemberExpression"
+      && node.object.property?.type === "Identifier" && node.object.property.name === "data"
+      && node.object.object?.type === "Identifier") {
+      found = node;
+      return false;
+    }
+  });
+  return found;
 }
 
 function patchSubmitMethodSource(methodSource) {
@@ -51,33 +80,60 @@ function patchSubmitMethodSource(methodSource) {
   }
   if (!submitOptionsVar) return null;
 
-  // Guard declaration: const FLAG=(CONV.data.agentBackend??"cursor-agent")!=="cursor-agent";
+  // Guard declaration. Two forms are supported:
+  //   const FLAG=(CONV.data.agentBackend??"cursor-agent")!=="cursor-agent";
+  // and the newer split form, where the backend value is bound to its own
+  // declarator and the flag compares against that binding:
+  //   const BD=CONV.data.agentBackend??"cursor-agent",FLAG=BD!=="cursor-agent";
+  // The `agentBackend` member and the `"cursor-agent"` literal are stable; the
+  // flag identifier and conversation handle come from the AST. The single form
+  // rewrites the whole declaration; the split form edits only the flag
+  // declarator's init so the backend binding (referenced later in the body)
+  // is preserved.
   let guard = null;
   walk(body, (node) => {
     if (guard) return false;
-    if (node.type !== "VariableDeclaration" || node.declarations.length !== 1) return;
-    const declarator = node.declarations[0];
-    const init = declarator.init;
-    if (declarator.id?.type !== "Identifier" || !init || init.type !== "BinaryExpression" || init.operator !== "!==") return;
-    if (init.right?.type !== "Literal" || init.right.value !== "cursor-agent") return;
-    let agentBackendMember = null;
-    walk(init.left, (left) => {
-      if (agentBackendMember) return false;
-      if (left.type === "MemberExpression"
-        && left.property?.type === "Identifier" && left.property.name === "agentBackend"
-        && left.object?.type === "MemberExpression"
-        && left.object.property?.type === "Identifier" && left.object.property.name === "data"
-        && left.object.object?.type === "Identifier") {
-        agentBackendMember = left;
+    if (node.type !== "VariableDeclaration") return;
+    for (let i = 0; i < node.declarations.length; i++) {
+      const declarator = node.declarations[i];
+      const init = declarator.init;
+      if (declarator.id?.type !== "Identifier" || !init
+        || init.type !== "BinaryExpression" || init.operator !== "!==") continue;
+      if (init.right?.type !== "Literal" || init.right.value !== "cursor-agent") continue;
+      // Old single form: LEFT directly carries CONV.data.agentBackend.
+      const direct = findAgentBackendMember(init.left);
+      if (direct) {
+        guard = {
+          flagVar: declarator.id.name,
+          conversationVar: direct.object.object.name,
+          backendExpression: methodSource.slice(toSourceIndex(init.left.start), toSourceIndex(init.left.end)),
+          editStart: node.start,
+          editEnd: node.end,
+          form: "single",
+        };
+        return false;
       }
-    });
-    if (!agentBackendMember) return;
-    guard = {
-      node,
-      flagVar: declarator.id.name,
-      left: init.left,
-      conversationVar: agentBackendMember.object.object.name,
-    };
+      // New split form: LEFT is an Identifier bound by an earlier declarator
+      // in this declaration whose init carries CONV.data.agentBackend.
+      if (init.left?.type === "Identifier") {
+        const refName = init.left.name;
+        const binding = i > 0
+          ? node.declarations.slice(0, i).find((d) => d.id?.type === "Identifier" && d.id.name === refName)
+          : null;
+        const indirect = binding ? findAgentBackendMember(binding.init) : null;
+        if (indirect) {
+          guard = {
+            flagVar: declarator.id.name,
+            conversationVar: indirect.object.object.name,
+            initSource: methodSource.slice(toSourceIndex(init.start), toSourceIndex(init.end)),
+            editStart: init.start,
+            editEnd: init.end,
+            form: "split",
+          };
+          return false;
+        }
+      }
+    }
   });
   if (!guard) return null;
 
@@ -136,15 +192,20 @@ function patchSubmitMethodSource(methodSource) {
     });
   }
 
-  const backendExpression = methodSource.slice(toSourceIndex(guard.left.start), toSourceIndex(guard.left.end));
-  const guardStart = toSourceIndex(guard.node.start);
-  let guardEnd = toSourceIndex(guard.node.end);
-  if (methodSource[guardEnd - 1] !== ";") {
-    if (methodSource[guardEnd] !== ";") return null;
-    guardEnd += 1;
+  const byokGuardSuffix =
+    `&&!(typeof globalThis.__cursorByokHasSubmitModelCandidate==="function"&&globalThis.__cursorByokHasSubmitModelCandidate(${selectedModelVar},${modelDetailsVar || "undefined"},${submitOptionsVar},${guard.conversationVar}.data))`;
+  const guardStart = toSourceIndex(guard.editStart);
+  let guardEnd = toSourceIndex(guard.editEnd);
+  let replacement;
+  if (guard.form === "single") {
+    if (methodSource[guardEnd - 1] !== ";") {
+      if (methodSource[guardEnd] !== ";") return null;
+      guardEnd += 1;
+    }
+    replacement = `const ${guard.flagVar}=(${guard.backendExpression})!=="cursor-agent"${byokGuardSuffix};`;
+  } else {
+    replacement = `${guard.initSource}${byokGuardSuffix}`;
   }
-  const replacement =
-    `const ${guard.flagVar}=(${backendExpression})!=="cursor-agent"&&!(typeof globalThis.__cursorByokHasSubmitModelCandidate==="function"&&globalThis.__cursorByokHasSubmitModelCandidate(${selectedModelVar},${modelDetailsVar || "undefined"},${submitOptionsVar},${guard.conversationVar}.data));`;
   const edits = [{ start: guardStart, end: guardEnd, replacement }];
   if (logStmt && requestIdVar) {
     let insertAt = toSourceIndex(logStmt.end);
