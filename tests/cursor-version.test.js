@@ -13,7 +13,9 @@ const {
 const { contextRpcMatchForCursorVersion } = require("../scripts/workbench-patches/transport-context-rpc");
 
 test("later Cursor versions use the newest known context-rpc match", () => {
-  assert.equal(contextRpcMatchForCursorVersion("3.15.5").cursorVersion, "0.0.0");
+  assert.equal(contextRpcMatchForCursorVersion("3.11.99").cursorVersion, "0.0.0");
+  assert.equal(contextRpcMatchForCursorVersion("3.12.30").cursorVersion, "3.12.0");
+  assert.equal(contextRpcMatchForCursorVersion("3.14.27").cursorVersion, "3.12.0");
   assert.equal(contextRpcMatchForCursorVersion("3.15.6").cursorVersion, "3.15.6");
   assert.equal(contextRpcMatchForCursorVersion("3.16.0").cursorVersion, "3.15.6");
   assert.equal(contextRpcMatchForCursorVersion("4.0.0").cursorVersion, "3.15.6");

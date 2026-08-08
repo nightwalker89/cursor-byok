@@ -12,9 +12,14 @@ const CONTEXT_RPC_AGENT_CLIENT_MATCHES = [
     serviceVarPattern: /createInstance\([A-Za-z_$][\w$]*,\{service:([A-Za-z_$][\w$]*),headerInjector:async\(\)=>\{/g,
   },
   {
-    // Cursor 3.15.6 changed `headerInjector` from `async()=>` to a named
-    // single-argument arrow. Keep this as the current match for all later
-    // versions until a newer Cursor build requires another definition.
+    // Cursor 3.12 introduced a named single-argument `headerInjector` arrow.
+    // Captured 3.12.30, 3.13.25, and 3.14.27 bundles share this shape.
+    cursorVersion: "3.12.0",
+    serviceVarPattern: /createInstance\([A-Za-z_$][\w$]*,\{service:([A-Za-z_$][\w$]*),headerInjector:async\s*[A-Za-z_$][\w$]*\s*=>\{/g,
+  },
+  {
+    // Cursor 3.15.6 retains the named-arrow shape. Keep a distinct version
+    // marker so later builds select the newest captured definition.
     cursorVersion: "3.15.6",
     serviceVarPattern: /createInstance\([A-Za-z_$][\w$]*,\{service:([A-Za-z_$][\w$]*),headerInjector:async\s*[A-Za-z_$][\w$]*\s*=>\{/g,
   },

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-08-08
+
+### Added
+
+- Internal Cursor 3.12–3.14 build-inspection utility. It downloads and validates
+  official signed DMGs, then prints the patch compatibility report so developers
+  can add evidence-backed versioned matchers and fixtures. It is not part of
+  runtime installation or preflight behavior.
+
 ## [1.0.2] — 2026-08-08
 
 ### Fixed

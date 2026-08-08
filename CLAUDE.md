@@ -91,14 +91,22 @@ helper. Pristine backups are content-addressed under
 from a pristine backup recorded for the same target path.
 
 **Versioned match policy:** match definitions are tagged with the first Cursor
-version whose minified shape they support. Starting with Cursor **3.15.6**, the
-installer reads the installed app version from `Contents/Info.plist` and selects
-the newest definition at or below that version. A later Cursor version therefore
-uses the latest known match (currently 3.15.6) until a captured seam proves a
-new definition is needed. Do not make a broad fallback to older match shapes on
-newer builds: add a versioned definition plus regression fixture instead. Set
-`CURSOR_VERSION` only to override version detection for a controlled test or
+version whose minified shape they support. The installer reads the installed app
+version from `Contents/Info.plist` and selects the newest definition at or below
+that version. A later Cursor version therefore uses the latest known match until
+a captured seam proves a new definition is needed. Captured 3.12.30, 3.13.25,
+and 3.14.27 bundles use the 3.12 context-RPC definition; 3.15.6 remains the
+latest captured definition. Do not make a broad fallback to older match shapes
+on newer builds: add a versioned definition plus regression fixture instead.
+Set `CURSOR_VERSION` only to override version detection for a controlled test or
 non-standard app layout; the selected match version appears in the patch report.
+
+**Old-build inspection:** `scripts/cursor-pristine-download.js` is a development
+tool only. Run it with `--version 3.12.30`, `3.13.25`, or `3.14.27` to download
+an official signed DMG into the temporary build cache, inspect its patch report,
+and capture any changed seam before adding a versioned matcher and fixture. It
+is not imported by `install:cursor` or `preflight:cursor`, cannot patch the
+installed app, and must never become an automatic download or downgrade path.
 
 ## Debugging
 
