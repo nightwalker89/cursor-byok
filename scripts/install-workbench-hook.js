@@ -6,6 +6,7 @@ const { DEFAULT_HOST, DEFAULT_PORT, DEFAULT_PORT_SEARCH_COUNT } = require("../sr
 const { hookStatePath, loadProviders, loadRoutes, workbenchBackupDir } = require("../src/config");
 const { byokModelIds, mergeAvailableModels } = require("../src/runtime/models");
 const { buildWorkbenchHook } = require("../src/workbench-hook");
+const { resolveCursorVersion } = require("./cursor-version");
 const {
   REGISTRY,
   TRANSPORT_PATCH_NAMES,
@@ -87,6 +88,7 @@ function installWorkbenchHook(options = {}) {
       routes: prepared.routeCount,
       transportHookPoints: prepared.transportHookPoints,
       patchedHookPoints: prepared.patchedHookPoints,
+      cursorVersion: prepared.cursorVersion || null,
       patchReport: prepared.patchReport,
       workbenchSha256: sha256Text(prepared.patchedWorkbenchContent),
       extHostSha256: prepared.extHostExists ? sha256Text(prepared.patchedExtHostContent) : null,
@@ -150,6 +152,7 @@ function restoreWorkbenchHook(options = {}) {
 function prepareWorkbenchInstall(options = {}) {
   const workbench = options.workbench || WORKBENCH;
   const extHost = options.extHost || EXT_HOST;
+  const cursorVersion = resolveCursorVersion(workbench, options.cursorVersion || process.env.CURSOR_VERSION);
   const routes = loadRoutes();
   const host = routes.server?.host || DEFAULT_HOST;
   const port = Number.isInteger(routes.server?.port) && routes.server.port > 0 ? routes.server.port : DEFAULT_PORT;
@@ -174,11 +177,13 @@ function prepareWorkbenchInstall(options = {}) {
     explicitPristineWorkbench,
   });
   const needsPristine = pristine.source === "patched-no-pristine";
-  const plan = needsPristine ? null : applyPatchPlan(stripManagedHookBlocks(pristine.content), { target: "workbench" });
+  const plan = needsPristine
+    ? null
+    : applyPatchPlan(stripManagedHookBlocks(pristine.content), { target: "workbench", cursorVersion });
   const extHostExists = fs.existsSync(extHost);
   const extHostContent = extHostExists ? fs.readFileSync(extHost, "utf8") : "";
   const extHostPlan = extHostExists
-    ? applyPatchPlan(stripManagedHookBlocks(extHostContent), { target: "extHost" })
+    ? applyPatchPlan(stripManagedHookBlocks(extHostContent), { target: "extHost", cursorVersion })
     : null;
   const patchedExtHostContent = extHostExists ? hook + extHostPlan.content : "";
   const extHostNeedsPatch = extHostExists && patchedExtHostContent !== extHostContent;
@@ -186,6 +191,7 @@ function prepareWorkbenchInstall(options = {}) {
     workbench,
     extHost,
     extHostExists,
+    cursorVersion: cursorVersion || null,
     routeCount: routes.redirect?.length || 0,
     pristineSource: pristine.source,
     pristineSourceReason: pristine.reason || null,
@@ -216,6 +222,7 @@ function summarizePreparedInstall(prepared, extra = {}) {
     workbench: prepared.workbench,
     extHost: prepared.extHost,
     routes: prepared.routeCount,
+    cursorVersion: prepared.cursorVersion,
     transportHookPoints: prepared.transportHookPoints,
     patchedHookPoints: prepared.patchedHookPoints,
     patchReport: prepared.patchReport,
@@ -346,8 +353,8 @@ function patchWorkbenchContent(content, hook) {
   return patchWorkbenchContentWithStatus(content, hook).content;
 }
 
-function patchWorkbenchContentWithStatus(content, hook) {
-  const plan = applyPatchPlan(stripManagedHookBlocks(content), { target: "workbench" });
+function patchWorkbenchContentWithStatus(content, hook, { cursorVersion } = {}) {
+  const plan = applyPatchPlan(stripManagedHookBlocks(content), { target: "workbench", cursorVersion });
   if (!hasActiveTransport(plan.report)) {
     throw new Error("Cursor BYOK install failed: no supported Cursor transport hook point found");
   }
@@ -363,8 +370,8 @@ function patchTransportFactory(content) {
   return patchTransportFactoryWithStatus(content).content;
 }
 
-function patchTransportFactoryWithStatus(content) {
-  const plan = applyPatchPlan(content, { names: TRANSPORT_PATCH_NAMES });
+function patchTransportFactoryWithStatus(content, { cursorVersion } = {}) {
+  const plan = applyPatchPlan(content, { names: TRANSPORT_PATCH_NAMES, cursorVersion });
   return {
     content: plan.content,
     hookPoints: transportHookPoints(plan.report),
@@ -385,6 +392,7 @@ if (require.main === module) {
     workbench: process.env.CURSOR_WORKBENCH || WORKBENCH,
     extHost: process.env.CURSOR_EXT_HOST || EXT_HOST,
     allowPartial: args.has("--allow-partial"),
+    cursorVersion: process.env.CURSOR_VERSION,
   };
   if (args.has("--restore")) {
     console.log(JSON.stringify(restoreWorkbenchHook(options), null, 2));

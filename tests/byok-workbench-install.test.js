@@ -321,7 +321,7 @@ test("workbench context-rpc agent client run is patched before official AgentSer
   const source =
     'before this.backendClient=this.instantiationService.createInstance(XT,{service:Olh,headerInjector:async()=>{const M=1;return M}});const v=this.backendClient,b=this.mockAgentStreamService,k=this.fileAppendService,E=this.workspaceContextService,A=this.environmentService,R=this.experimentService,D=this.logService;b.isAvailable?this.client=new $sg(new tgw(M=>b.getMockStream(M.conversationId,M.requestId,M.signal))):this.client=new $sg({async*run(M,B,O){const J=await v.get(M),W=vMt(J,{injectTraceHeaders:!0}),z=(!A.isBuilt||A.isExtensionDevelopment)&&R.checkFeatureGate("nal_trace",{disableExposureLog:!1});let V;if(z){const Y=O.headers?.["x-request-id"]??"undefined-bug";V=new dKw(Y,k,E),B=CN_(B,Q=>{V.logMessage(Q,"sent")})}let j=W.run(M,B,O);try{O.onNetworkStarted?.()}catch(Y){D.warn("[AgentClientService] onNetworkStarted callback failed",Y)}try{for await(const Y of j)yield Y}finally{V&&await V.finalize()}}})}async getLocalAgentProviderConfig(n){after';
 
-  const patched = patchContextRpcAgentClient(source);
+  const patched = patchContextRpcAgentClient(source, { cursorVersion: "3.15.5" });
 
   assert.notEqual(patched, source);
   assert.match(patched, /__cursorByokMarkHookPoint\("context-rpc-agent-client",\{serviceType:Olh&&Olh\.typeName\}\)/);
@@ -335,12 +335,32 @@ test("workbench context-rpc agent client patch matches pristine backup minified 
   const source =
     'before this.backendClient=this.instantiationService.createInstance(XT,{service:Tlh,headerInjector:async()=>{const M=1;return M}});const v=this.backendClient,b=this.mockAgentStreamService,k=this.fileAppendService,E=this.workspaceContextService,A=this.environmentService,R=this.experimentService,D=this.logService;b.isAvailable?this.client=new wsg(new tgw(M=>b.getMockStream(M.conversationId,M.requestId,M.signal))):this.client=new wsg({async*run(M,B,F){const J=await v.get(M),W=hMt(J,{injectTraceHeaders:!0}),z=(!A.isBuilt||A.isExtensionDevelopment)&&R.checkFeatureGate("nal_trace",{disableExposureLog:!1});let V;if(z){const Y=F.headers?.["x-request-id"]??"undefined-bug";V=new Pjw(Y,k,E),B=YL_(B,Q=>{V.logMessage(Q,"sent")})}let j=W.run(M,B,F);try{F.onNetworkStarted?.()}catch(Y){D.warn("[AgentClientService] onNetworkStarted callback failed",Y)}try{for await(const Y of j)yield Y}finally{V&&await V.finalize()}}})}after';
 
-  const patched = patchContextRpcAgentClient(source);
+  const patched = patchContextRpcAgentClient(source, { cursorVersion: "3.15.5" });
 
   assert.notEqual(patched, source);
   assert.match(patched, /__cursorByokMarkHookPoint\("context-rpc-agent-client",\{serviceType:Tlh&&Tlh\.typeName\}\)/);
   assert.match(patched, /__cursorByokWrapAgentClient\(hMt\(J,\{injectTraceHeaders:!0\}\),Tlh\):hMt\(J,\{injectTraceHeaders:!0\}\)/);
   assert.deepEqual(detectActiveTransportHookPoints(patched), ["context-rpc-agent-client"]);
+});
+
+test("workbench context-rpc agent client matches Cursor 3.15.6 headerInjector with arrow param", () => {
+  // The build moved headerInjector from `async()=>{` to `async j=>{` (a named
+  // arrow param). The service-var lookup must still resolve JRi so the seam
+  // patches instead of silently reporting absent on the new build.
+  const source =
+    'before this.backendClient=this.instantiationService.createInstance(b_,{service:JRi,headerInjector:async j=>{var U=[];return U}});const T=this.backendClient,x=this.mockAgentStreamService,I=this.fileAppendService,M=this.workspaceContextService,P=this.pathService,L=this.environmentService,N=this.experimentService,B=this.logService;x.isAvailable?this.client=new QBs(new CUu(j=>x.getMockStream(j.conversationId,j.requestId,j.signal))):this.client=new QBs({async*run(j,U,W){const H=await T.get(j),V=K2e(H,{injectTraceHeaders:!0}),G=(!L.isBuilt||L.isExtensionDevelopment)&&N.checkFeatureGate("nal_trace",{disableExposureLog:!1});let K;if(G){const Z=W.headers?.["x-request-id"]??"undefined-bug";K=new azu(Z,I,M,P),U=iUl(U,te=>{K.logMessage(te,"sent")})}let Q=V.run(j,U,W);try{W.onNetworkStarted?.()}catch(Z){B.warn("[AgentClientService] onNetworkStarted callback failed",Z)}try{for await(const Z of Q)yield Z}finally{K&&await K.finalize()}}})}async getLocalAgentProviderConfig(n){after';
+
+  const patched = patchContextRpcAgentClient(source, { cursorVersion: "3.15.6" });
+
+  assert.notEqual(patched, source);
+  assert.match(patched, /__cursorByokMarkHookPoint\("context-rpc-agent-client",\{serviceType:JRi&&JRi\.typeName\}\)/);
+  assert.match(patched, /__cursorByokWrapAgentClient\(K2e\(H,\{injectTraceHeaders:!0\}\),JRi\):K2e\(H,\{injectTraceHeaders:!0\}\)/);
+  assert.match(patched, /let Q=V\.run\(j,U,W\)/);
+  assert.deepEqual(detectActiveTransportHookPoints(patched), ["context-rpc-agent-client"]);
+  assert.equal(patchContextRpcAgentClient(patched), patched);
+
+  const laterCursorPatched = patchContextRpcAgentClient(source, { cursorVersion: "3.16.0" });
+  assert.equal(laterCursorPatched, patched);
 });
 
 test("full workbench patch fails fast when no supported transport hook point is found", () => {

@@ -15,7 +15,7 @@ const { REGISTRY, TRANSPORT_PATCH_NAMES } = require("./workbench-patches");
 //                     builds for local-agent-run), so absence is not a failure
 // - "absent":         the patch did not match this content
 // - "skipped-target": the patch does not apply to the requested target
-function applyPatchPlan(content, { target, names } = {}) {
+function applyPatchPlan(content, { target, names, cursorVersion } = {}) {
   const report = [];
   for (const patch of REGISTRY) {
     if (names && !names.includes(patch.name)) continue;
@@ -23,16 +23,24 @@ function applyPatchPlan(content, { target, names } = {}) {
       report.push({ name: patch.name, severity: patch.severity, status: "skipped-target" });
       continue;
     }
-    const next = patch.apply(content);
+    const matchContext = { target, cursorVersion };
+    const matchVersion = patch.matchVersion?.(matchContext) || null;
+    const reportEntry = (status) => ({
+      name: patch.name,
+      severity: patch.severity,
+      status,
+      ...(matchVersion ? { matchVersion } : {}),
+    });
+    const next = patch.apply(content, matchContext);
     if (next !== content) {
       content = next;
-      report.push({ name: patch.name, severity: patch.severity, status: "applied" });
+      report.push(reportEntry("applied"));
     } else if (patch.isActive && patch.isActive(content)) {
-      report.push({ name: patch.name, severity: patch.severity, status: "active" });
+      report.push(reportEntry("active"));
     } else if (patch.isNotNeeded && patch.isNotNeeded(content)) {
-      report.push({ name: patch.name, severity: patch.severity, status: "not-needed" });
+      report.push(reportEntry("not-needed"));
     } else {
-      report.push({ name: patch.name, severity: patch.severity, status: "absent" });
+      report.push(reportEntry("absent"));
     }
   }
   return { content, report };

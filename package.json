@@ -2,7 +2,7 @@
   "publisher": "starduster",
   "name": "cursor-byok",
   "displayName": "Cursor BYOK",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Readable BYOK adapter for Cursor.",
   "icon": "resources/icon.png",
   "main": "./src/extension.js",

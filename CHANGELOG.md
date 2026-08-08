@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-08-08
+
+### Fixed
+
+- **Cursor 3.15.6 context-RPC transport matching.** The `headerInjector`
+  callback changed from a zero-argument arrow to a named single-argument
+  arrow, causing the context-RPC agent-client seam to be missed.
+  - Match definitions are now version-aware: the installer reads Cursor's
+    version from the app bundle and selects the newest known match at or below
+    that version. Later Cursor releases use the latest known match until a new
+    captured seam requires an update.
+  - Patch reports and saved install state include the detected Cursor version
+    and selected matcher version for diagnosability.
+
 ## [1.0.1] — 2026-08-03
 
 ### Fixed
@@ -76,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hook runtime/transport, workbench install/preflight, server routing, MCP
   cache, and tool result formats.
 
-[Unreleased]: https://github.com/nightwalker89/cursor-byok/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/nightwalker89/cursor-byok/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/nightwalker89/cursor-byok/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/nightwalker89/cursor-byok/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/nightwalker89/cursor-byok/releases/tag/v1.0.0
